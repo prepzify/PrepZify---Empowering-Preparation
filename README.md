@@ -85,6 +85,79 @@ Prepzify provides a complete AI-driven ecosystem that:
 
 ---
 
+## 🚦 Getting Started
+
+Quick steps to run the project locally.
+
+Prerequisites:
+- Node.js (v18+ recommended)
+- npm (or yarn/pnpm)
+- MongoDB (local or cloud URI)
+
+Backend (API)
+
+1. Open a terminal and navigate to the backend folder:
+
+```bash
+cd backend
+```
+
+2. Install dependencies and start the development server:
+
+```bash
+npm install
+npm run dev
+```
+
+The backend runs from [backend/server.js](backend/server.js#L1).
+
+Frontend (Client)
+
+1. Open a second terminal and navigate to the frontend folder:
+
+```bash
+cd frontend
+```
+
+2. Install dependencies and start the dev server:
+
+```bash
+npm install
+npm run dev
+```
+
+The frontend uses Vite and the entry is [frontend/src/main.jsx](frontend/src/main.jsx#L1).
+
+Environment variables (backend)
+
+Create a `.env` file in the `backend` folder with the following (example):
+
+```
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+GEMINI_API_KEY=your_generative_ai_key
+PORT=5000
+```
+
+Notes:
+- Uploaded files are served from the `backend/uploads` directory and should be ignored by git (see [backend/.gitignore](backend/.gitignore#L1)).
+- Keep any API keys and secrets out of version control.
+
+---
+
+## 📁 Project Structure (quick)
+
+- [backend](backend): Express API, routes, models, services (AI integrations)
+- [frontend](frontend): React + Vite client app
+
+---
+
+## 🤝 Contributing
+
+Feel free to open issues or submit pull requests. For major changes, open an issue first to discuss what you would like to change.
+
+---
+
 ## 📊 System Architecture
 
 1. Data Layer → Database  
