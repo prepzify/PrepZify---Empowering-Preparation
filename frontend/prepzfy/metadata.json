@@ -1,0 +1,6 @@
+{
+  "name": "PrepZfy",
+  "description": "An AI-powered platform for B.Tech students to prepare for placements with personalized learning paths, mock interviews, and coding challenges.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["AI Mock Interviews", "Coding Workspace", "Personalized Recommendations"]
+}

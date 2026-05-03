@@ -1,0 +1,136 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Information about a registered student user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "bio": { "type": "string" },
+        "location": { "type": "string" },
+        "website": { "type": "string" },
+        "github": { "type": "string" },
+        "linkedin": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "achievements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "description": { "type": "string" },
+              "fileUrl": { "type": "string" },
+              "fileName": { "type": "string" },
+              "createdAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "problemsSolved": { "type": "number" },
+            "points": { "type": "number" },
+            "avgScore": { "type": "number" },
+            "globalRank": { "type": "number" },
+            "badgesEarned": { "type": "number" }
+          }
+        },
+        "badges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "icon": { "type": "string" },
+              "color": { "type": "string" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email"]
+    },
+    "Interview": {
+      "title": "Interview Session",
+      "description": "Details of a specific mock interview session.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "mode": { "type": "string", "enum": ["text", "audio", "video"] },
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string", "enum": ["user", "assistant"] },
+              "content": { "type": "string" }
+            }
+          }
+        },
+        "feedback": {
+          "type": "object",
+          "properties": {
+            "score": { "type": "number" },
+            "strengths": { "type": "array", "items": { "type": "string" } },
+            "weaknesses": { "type": "array", "items": { "type": "string" } },
+            "overallFeedback": { "type": "string" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "mode", "createdAt"]
+    },
+    "StudyPlan": {
+      "title": "Study Plan",
+      "description": "AI-generated personalized study path for a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "summary": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "topic": { "type": "string" },
+              "priority": { "type": "string" },
+              "reason": { "type": "string" },
+              "resources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": { "type": "string" },
+                    "url": { "type": "string" },
+                    "type": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "estimatedTimeToReady": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document."
+    },
+    "/interviews/{interviewId}": {
+      "schema": "Interview",
+      "description": "Historical interview sessions."
+    },
+    "/studyPlans/{userId}": {
+      "schema": "StudyPlan",
+      "description": "The current study plan for a user."
+    }
+  }
+}
