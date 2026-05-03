@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Helpers ---
+
+    function isValidUser(data) {
+      return (data.userId == request.auth.uid || data.uid == request.auth.uid)
+        && data.email is string
+        && (data.get('name', 'User') is string && data.get('name', 'User').size() <= 100)
+        && (data.get('bio', '') is string && data.get('bio', '').size() <= 1000)
+        && (data.get('location', '') is string && data.get('location', '').size() <= 100)
+        && (data.get('website', '') is string && data.get('website', '').size() <= 200)
+        && (data.get('github', '') is string && data.get('github', '').size() <= 200)
+        && (data.get('linkedin', '') is string && data.get('linkedin', '').size() <= 200)
+        && (data.get('skills', []) is list)
+        && (data.get('achievements', []) is list);
+    }
+
+    function isValidInterview(data) {
+      return data.userId == request.auth.uid
+        && data.mode in ['text', 'audio', 'video']
+        && data.createdAt == request.time
+        && data.messages.size() <= 200;
+    }
+
+    function isValidStudyPlan(data) {
+      return data.userId == request.auth.uid
+        && (data.get('items', []) is list)
+        && (data.get('items', []).size() <= 100);
+    }
+
+    // --- Collection Routes ---
+
+    match /users/{userId} {
+      allow get: if isSignedIn(); // Allow reading other profiles (e.g., leaderboard)
+      allow list: if isSignedIn(); // Allow listing for leaderboard
+      allow create: if isOwner(userId) && (incoming().get('userId', '') == request.auth.uid || incoming().get('uid', '') == request.auth.uid) && incoming().createdAt == request.time;
+      allow update: if isOwner(userId) 
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'bio', 'location', 'website', 'github', 'linkedin', 'skills', 'achievements', 'stats', 'badges', 'updatedAt'])
+        );
+    }
+
+    match /interviews/{interviewId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidInterview(incoming());
+      allow update, delete: if false; // Interviews are immutable historical records
+    }
+
+    match /studyPlans/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidStudyPlan(incoming()) && incoming().createdAt == request.time;
+      allow update: if isOwner(userId) && isValidStudyPlan(incoming()) && incoming().updatedAt == request.time;
+      allow delete: if isOwner(userId);
+    }
+
+    // 0. Catch-all deny (at bottom)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
