@@ -61,7 +61,7 @@ export default function LandingPage() {
           </h2>
           
           <p className="text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
-            Personalized coding paths, AI-powered mock interviews, and deep resume intelligence to get you hired at elite tech companies.
+            Personalized coding roadmaps, AI-powered mock interviews, and advanced resume intelligence designed to help you crack top tech roles and get hired by elite companies.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
