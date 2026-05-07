@@ -2,7 +2,7 @@
 
 <img width="1200" height="475" alt="Prepzify Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 
-# 🚀 Prepzify — Empowering Preparation
+# 🚀 PrepZify — Empowering Preparation
 
 *An AI-powered placement preparation platform that transforms the way students get job-ready.*
 
@@ -35,11 +35,11 @@
 
 ## 🎯 About the Project
 
-*Prepzify* is a full-stack, AI-driven placement preparation platform built to bridge the gap between students and their dream jobs. It provides an end-to-end ecosystem — from resume evaluation and adaptive mock tests to interview simulation and personalized study planning — all powered by AI.
+*PrepZify* is a full-stack, AI-driven placement preparation platform built to bridge the gap between students and their dream jobs. It provides an end-to-end ecosystem — from resume evaluation and adaptive mock tests to interview simulation and personalized study planning — all powered by AI.
 
 > 🔗 *Live Application:* [https://prepzify-pf85.onrender.com/](https://prepzify-pf85.onrender.com/)
 
-Whether you're a fresher or a final-year student gearing up for campus placements, Prepzify gives you the tools to prepare smarter, not harder.
+Whether you're a fresher or a final-year student gearing up for campus placements, PrepZify gives you the tools to prepare smarter, not harder.
 
 ---
 
@@ -53,7 +53,7 @@ Students preparing for placements face significant, often overlooked challenges:
 - ❌ Unclear career guidance and company targeting
 - ❌ Difficulty identifying skill gaps before interviews
 
-These pain points lead to inefficient preparation cycles and lower placement success rates. Prepzify is built to solve all of this in one place.
+These pain points lead to inefficient preparation cycles and lower placement success rates. PrepZify is built to solve all of this in one place.
 
 ---
 
@@ -123,7 +123,7 @@ These pain points lead to inefficient preparation cycles and lower placement suc
        │                          │
 ┌──────▼──────┐           ┌───────▼───────────┐
 │  Data Layer │           │     AI Layer      │
-│  MongoDB /  │           │  Resume Analyzer  │
+│             │           │  Resume Analyzer  │
 │  Firebase   │           │  Test Engine      │
 └─────────────┘           │  Study Planner    │
                           │  Interview Bot    │
