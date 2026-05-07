@@ -4,12 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx backend/server.ts",
-    "build": "vite build frontend",
-    "start": "node backend/server.ts",
-    "preview": "vite preview frontend",
+    "dev": "tsx server.ts",
+    "build": "vite build",
+    "start": "node server.ts",
+    "preview": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "tsc -p frontend/tsconfig.json --noEmit"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
