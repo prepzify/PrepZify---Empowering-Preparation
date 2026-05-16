@@ -14,25 +14,42 @@ import InterviewAI from './components/InterviewAI';
 import PracticeQuestions from './components/PracticeQuestions';
 import StudyPaths from './components/StudyPaths';
 import ResumeCheck from './components/ResumeCheck';
-import Leaderboards from './components/Leaderboards';
 import Settings from './components/Settings';
 import Support from './components/Support';
 import QuickPrepAssessment from './components/QuickPrepAssessment';
+import LiveExpertBooking from './components/LiveExpertBooking';
+import InterviewHistory from './components/InterviewHistory';
 import LandingPage from './components/LandingPage';
 import AuthPage from './components/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import { ThemeProvider } from './context/ThemeContext';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Suppress benign Vite environment errors
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      const msg = event.reason?.message || event.reason || "";
+      if (
+        msg.includes('WebSocket') || 
+        msg.includes('failed to connect to websocket')
+      ) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener('unhandledrejection', handleRejection);
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
   }, []);
 
   if (loading) {
@@ -47,33 +64,36 @@ export default function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/landing" element={user ? <Navigate to="/" replace /> : <LandingPage />} />
-        <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/landing" element={user ? <Navigate to="/" replace /> : <LandingPage />} />
+          <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
 
-        {/* Protected Dashboard Routes */}
-        <Route path="/*" element={
-          <ProtectedRoute>
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/interview" element={<InterviewAI />} />
-                <Route path="/code" element={<PracticeQuestions />} />
-                <Route path="/paths" element={<StudyPaths />} />
-                <Route path="/resume" element={<ResumeCheck />} />
-                <Route path="/leaderboards" element={<Leaderboards />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/quick-prep" element={<QuickPrepAssessment />} />
-                {/* Fallback for protected routes */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Layout>
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </Router>
+          {/* Protected Dashboard Routes */}
+          <Route path="/*" element={
+            <ProtectedRoute>
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/interview" element={<InterviewAI />} />
+                  <Route path="/code" element={<PracticeQuestions />} />
+                  <Route path="/paths" element={<StudyPaths />} />
+                  <Route path="/resume" element={<ResumeCheck />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/support" element={<Support />} />
+                  <Route path="/quick-prep" element={<QuickPrepAssessment />} />
+                  <Route path="/expert" element={<LiveExpertBooking />} />
+                  <Route path="/interviews/history" element={<InterviewHistory />} />
+                  {/* Fallback for protected routes */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Layout>
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }

@@ -45,17 +45,17 @@
   --color-surface-container-highest: #cbd5e1;
   --color-surface-container-lowest: #ffffff;
 
-  --color-outline: #e2e8f0;
-  --color-outline-variant: #f1f5f9;
+  --color-outline: #cbd5e1;
+  --color-outline-variant: #e2e8f0;
   
   --color-primary: #4f46e5;
-  --color-secondary: #0d9488;
+  --color-secondary: #ff9800;
 }
 
 /* System Dark Theme if no class is present */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    /* Variables already default to dark in theme block */
+    /* Keeping the original dark variables as intended */
   }
 }
 
@@ -73,11 +73,11 @@
     --color-surface-container-highest: #cbd5e1;
     --color-surface-container-lowest: #ffffff;
 
-    --color-outline: #e2e8f0;
-    --color-outline-variant: #f1f5f9;
+    --color-outline: #cbd5e1;
+    --color-outline-variant: #e2e8f0;
     
     --color-primary: #4f46e5;
-    --color-secondary: #0d9488;
+    --color-secondary: #ff9800;
   }
 }
 

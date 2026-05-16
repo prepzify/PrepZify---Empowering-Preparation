@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Lock, User, ArrowRight, Github, Chrome, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { signUpWithEmail, signInWithEmail, signIn, updateUserProfile, ensureUserStats } from '../lib/firebase';
+import { Mail, Lock, User, ArrowRight, Github, Chrome, AlertCircle, Eye, EyeOff, RefreshCcw } from 'lucide-react';
+import { signUpWithEmail, signInWithEmail, signIn, updateUserProfile, ensureUserStats, handleRedirectResult } from '../lib/firebase';
 import Logo from './Logo';
 
 export default function AuthPage() {
@@ -13,12 +13,25 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if we back from a redirect sign-in
+    const checkRedirect = async () => {
+      const user = await handleRedirectResult();
+      if (user) {
+        navigate('/');
+      }
+    };
+    checkRedirect();
+  }, [navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setPopupBlocked(false);
 
     try {
       if (isLogin) {
@@ -42,12 +55,24 @@ export default function AuthPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (useRedirect = false) => {
+    setLoading(true);
+    setError('');
+    setPopupBlocked(false);
     try {
-      await signIn();
-      navigate('/');
+      const user = await signIn(useRedirect);
+      if (user) {
+        navigate('/');
+      }
     } catch (err: any) {
-      setError(err.message || 'Google Sign-In failed.');
+      if (err.message === 'SIGN_IN_POPUP_BLOCKED') {
+        setPopupBlocked(true);
+        setError('Your browser blocked the sign-in popup. Please allow popups or use the redirect method below.');
+      } else {
+        setError(err.message || 'Google Sign-In failed.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -199,19 +224,38 @@ export default function AuthPage() {
               <div className="relative flex justify-center uppercase"><span className="bg-background px-4 text-[9px] font-bold text-on-surface-variant tracking-[0.2em]">Or Continue With</span></div>
            </div>
 
-           <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <button 
-                onClick={handleGoogleSignIn}
-                className="flex items-center justify-center gap-3 p-4 bg-surface-container border border-outline-variant rounded-2xl hover:bg-surface-container-high transition-all group"
+                onClick={() => handleGoogleSignIn(false)}
+                disabled={loading}
+                className="flex items-center justify-center gap-3 p-4 bg-surface-container border border-outline-variant rounded-2xl hover:bg-surface-container-high transition-all group disabled:opacity-50"
               >
                  <Chrome className="w-5 h-5 text-on-surface-variant group-hover:text-[#4285F4] transition-colors" />
-                 <span className="text-[10px] font-bold uppercase tracking-widest">Google</span>
+                 <span className="text-[10px] font-bold uppercase tracking-widest">Google Login</span>
               </button>
-              <button className="flex items-center justify-center gap-3 p-4 bg-surface-container border border-outline-variant rounded-2xl hover:bg-surface-container-high transition-all group opacity-50 cursor-not-allowed">
-                 <Github className="w-5 h-5 text-on-surface-variant group-hover:text-on-surface transition-colors" />
-                 <span className="text-[10px] font-bold uppercase tracking-widest">GitHub</span>
-              </button>
-           </div>
+              
+              {popupBlocked && (
+                <button 
+                  onClick={() => handleGoogleSignIn(true)}
+                  disabled={loading}
+                  className="flex items-center justify-center gap-3 p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-2xl hover:bg-indigo-500/20 transition-all group animate-in fade-in slide-in-from-top-2"
+                >
+                   <RefreshCcw className="w-4 h-4 text-indigo-400 animate-spin-slow" />
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Try Redirect Mode</span>
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 opacity-50 grayscale pointer-events-none">
+               <div className="flex items-center justify-center gap-3 p-4 bg-surface-container border border-outline-variant rounded-2xl">
+                  <Github className="w-5 h-5 text-on-surface-variant" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">GitHub</span>
+               </div>
+               <div className="flex items-center justify-center gap-3 p-4 bg-surface-container border border-outline-variant rounded-2xl">
+                  <Chrome className="w-5 h-5 text-on-surface-variant" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Other</span>
+               </div>
+            </div>
 
            <div className="text-center">
               <button 

@@ -1,8 +1,9 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Editor } from '@monaco-editor/react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { analyzeCode, generateContent, models } from '../services/geminiService';
+import { analyzeCode, generateContent, models, generateQuestionHint } from '../services/geminiService';
 import { generateAIQuestions } from '../services/aiQuestionService';
 import { QUESTIONS, DEPARTMENTS, BRANCHES } from '../data/questions';
 import { 
@@ -32,8 +33,9 @@ import { Question, QuestionStore } from '../types';
 import { updateXp } from '../lib/firebase';
 
 export default function PracticeQuestions() {
+  const [searchParams] = useSearchParams();
   const [filterCategory, setFilterCategory] = useState<'coding' | 'aptitude' | 'technical' | 'all'>('all');
-  const [selectedBranch, setSelectedBranch] = useState<string>('CSE');
+  const [selectedBranch, setSelectedBranch] = useState<string>(searchParams.get('branch') || 'CSE');
   const [selectedTopic, setSelectedTopic] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
@@ -48,6 +50,15 @@ export default function PracticeQuestions() {
   const [questionStore, setQuestionStore] = useState<QuestionStore>({});
   const [generatingKeys, setGeneratingKeys] = useState<Set<string>>(new Set());
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [isGeneratingHint, setIsGeneratingHint] = useState(false);
+  const [aiHint, setAiHint] = useState<string | null>(null);
+
+  useEffect(() => {
+    const branch = searchParams.get('branch');
+    if (branch && DEPARTMENTS[branch]) {
+      setSelectedBranch(branch);
+    }
+  }, [searchParams]);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -153,18 +164,75 @@ export default function PracticeQuestions() {
   };
 
   const getStarterCode = (q: Question, lang: string) => {
-    const title = q.title.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const functionName = (title.includes('valid') || title.includes('is')) ? 'isValid' : 'solve';
+    // If the question has specific starter code and it matches JS, use it
+    if (q.starterCode && lang === 'javascript') {
+      return q.starterCode;
+    }
+
+    const title = q.title.toLowerCase();
+    const topic = q.topic.toLowerCase();
+    const cleanTitle = q.title.toLowerCase().replace(/[^a-z0-9]/g, '');
     
+    // Determine function name
+    let functionName = (cleanTitle.includes('valid') || cleanTitle.includes('is') || cleanTitle.includes('has')) ? 'isValid' : 'solve';
+    if (q.starterCode) {
+      const match = q.starterCode.match(/(?:const|function|let|var)\s+([a-zA-Z0-9_]+)/);
+      if (match && match[1]) {
+        functionName = match[1];
+      }
+    }
+
+    // Infer parameters and return type
+    const isArrayProblem = topic.includes('array') || title.includes('array') || topic.includes('sorting') || title.includes('duplicate') || title.includes('sum') || title.includes('merge') || title.includes('elements');
+    const isStringProblem = topic.includes('string') || title.includes('string') || title.includes('parentheses') || title.includes('palindrome') || title.includes('character');
+    const isMathProblem = topic.includes('math') || title.includes('number') || title.includes('integer') || title.includes('factorial') || title.includes('fibonacci') || title.includes('prime');
+    const isListProblem = topic.includes('linked list') || title.includes('list');
+    const isTreeProblem = topic.includes('tree');
+    
+    const isBooleanReturn = cleanTitle.includes('is') || cleanTitle.includes('has') || cleanTitle.includes('valid') || cleanTitle.includes('contains') || cleanTitle.includes('detect');
+
+    type Param = { name: string; type: string; pyType: string; cppType: string; javaType: string };
+    const params: Param[] = [];
+
+    if (isListProblem) {
+      params.push({ name: 'head', type: 'ListNode', pyType: 'head', cppType: 'ListNode*', javaType: 'ListNode' });
+    } else if (isTreeProblem) {
+      params.push({ name: 'root', type: 'TreeNode', pyType: 'root', cppType: 'TreeNode*', javaType: 'TreeNode' });
+    } else if (isStringProblem) {
+      params.push({ name: 's', type: 'string', pyType: 's', cppType: 'std::string', javaType: 'String' });
+      if (title.includes('common') || title.includes('two') || title.includes('anagram') || title.includes('compare')) {
+         params.push({ name: 't', type: 'string', pyType: 't', cppType: 'std::string', javaType: 'String' });
+      }
+    } else if (isArrayProblem) {
+      params.push({ name: 'nums', type: 'number[]', pyType: 'nums', cppType: 'std::vector<int>&', javaType: 'int[]' });
+      if (title.includes('target') || title.includes('sum') || title.includes('kth') || title.includes('search') || title.includes('val')) {
+        params.push({ name: 'target', type: 'number', pyType: 'target', cppType: 'int', javaType: 'int' });
+      }
+    } else if (isMathProblem) {
+      params.push({ name: 'n', type: 'number', pyType: 'n', cppType: 'int', javaType: 'int' });
+    } else {
+      params.push({ name: 'input', type: 'any', pyType: 'input', cppType: 'std::string', javaType: 'String' });
+    }
+
     switch (lang) {
       case 'python':
-        return `class Solution(object):\n    def ${functionName}(self, input):\n        # Your code here\n        pass`;
+        const pyArgs = ['self', ...params.map(p => p.pyType)].join(', ');
+        return `class Solution(object):\n    def ${functionName}(${pyArgs}):\n        # Your code here\n        pass`;
       case 'cpp':
-        return `#include <iostream>\n#include <string>\n#include <vector>\n\nclass Solution {\npublic:\n    void ${functionName}(std::string s) {\n        // Your code here\n    }\n};`;
+        const cppRetType = isBooleanReturn ? 'bool' : 'int';
+        const cppArgs = params.map(p => `${p.cppType} ${p.name}`).join(', ');
+        return `#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\n\nclass Solution {\npublic:\n    ${cppRetType} ${functionName}(${cppArgs}) {\n        // Your code here\n        return ${isBooleanReturn ? 'false' : '0'};\n    }\n};`;
       case 'java':
-        return `/**\n * Definition for assessment node.\n */\nclass Solution {\n    public void ${functionName}(String s) {\n        // Your code here\n    }\n}`;
+        const javaRetType = isBooleanReturn ? 'boolean' : 'int';
+        const javaArgs = params.map(p => `${p.javaType} ${p.name}`).join(', ');
+        return `/**\n * Definition for assessment node.\n */\nclass Solution {\n    public ${javaRetType} ${functionName}(${javaArgs}) {\n        // Your code here\n        return ${isBooleanReturn ? 'false' : '0'};\n    }\n}`;
+      case 'javascript':
+        const jsArgs = params.map(p => p.name).join(', ');
+        const jsDoc = params.map(p => ` * @param {${p.type}} ${p.name}`).join('\n');
+        return `/**\n${jsDoc}\n * @return {any}\n */\nconst ${functionName} = (${jsArgs}) => {\n    // Your code here\n};`;
       default:
-        return `function ${functionName}(input) {\n    // Your code here\n}`;
+        const defArgs = params.map(p => p.name).join(', ');
+        return `function ${functionName}(${defArgs}) {\n    // Your code here\n}`;
     }
   };
 
@@ -172,6 +240,7 @@ export default function PracticeQuestions() {
     setSelectedQuestion(q);
     setSelectedOption(null);
     setShowAnswer(false);
+    setAiHint(null);
     window.scrollTo({ top: 0, behavior: 'instant' });
     if (q.category === 'coding') {
       setCode(getStarterCode(q, language));
@@ -303,7 +372,7 @@ If there are syntax errors, output them clearly. If logic is correct, show the r
                      selectedQuestion.difficulty === 'medium' ? 100 : 200;
           
           setXpAwarded(xp);
-          await updateXp(xp);
+          await updateXp(xp, 1);
           setShowSuccessModal(true);
         } else {
           setOutput(`Wrong Answer\n${parsed.details}\n${parsed.error || ''}`);
@@ -313,7 +382,7 @@ If there are syntax errors, output them clearly. If logic is correct, show the r
         if (verificationResult.toLowerCase().includes('"passed": true')) {
            allPassed = true;
            setXpAwarded(50);
-           await updateXp(50);
+           await updateXp(50, 1);
            setShowSuccessModal(true);
            setOutput('Test cases passed (Heuristic check).');
         } else {
@@ -324,6 +393,19 @@ If there are syntax errors, output them clearly. If logic is correct, show the r
       setOutput(`Submission failed: ${error.message || 'System error during verification.'}`);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGetHint = async () => {
+    if (!selectedQuestion || isGeneratingHint) return;
+    setIsGeneratingHint(true);
+    try {
+      const hint = await generateQuestionHint(selectedQuestion.title, selectedQuestion.content, selectedQuestion.category);
+      setAiHint(hint);
+    } catch (error) {
+      console.error("Hint error:", error);
+    } finally {
+      setIsGeneratingHint(false);
     }
   };
 
@@ -801,7 +883,7 @@ If there are syntax errors, output them clearly. If logic is correct, show the r
                 </div>
              </div>
 
-             <h2 className="text-3xl font-black mb-6 text-white tracking-tight">{selectedQuestion.title}</h2>
+             <h2 className="text-3xl font-black mb-6 text-[#353131] tracking-tight">{selectedQuestion.title}</h2>
              
              <div className="p-6 rounded-2xl bg-surface-container/50 border border-outline-variant/30 mb-8 overflow-y-auto max-h-[50vh] custom-scrollbar">
                 <div className="space-y-6">
@@ -853,14 +935,35 @@ If there are syntax errors, output them clearly. If logic is correct, show the r
                       <p className="text-sm text-on-surface-variant leading-relaxed">{selectedQuestion.explanation}</p>
                     </motion.div>
                   )}
+
+                  {aiHint && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-5 rounded-2xl bg-tertiary/5 border border-tertiary/20"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-3 h-3 text-tertiary" />
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-tertiary">AI Tutor Hint</h4>
+                      </div>
+                      <p className="text-sm text-on-surface-variant leading-relaxed">{aiHint}</p>
+                    </motion.div>
+                  )}
                 </div>
               </div>
               
               <div className="flex gap-4">
                  {!showAnswer ? (
                    <button 
-                     onClick={() => {
-                       if (selectedOption !== null) setShowAnswer(true);
+                     onClick={async () => {
+                       if (selectedOption !== null) {
+                        setShowAnswer(true);
+                        if (selectedOption === selectedQuestion.correctIndex) {
+                          const xp = selectedQuestion.difficulty === 'easy' ? 20 : 
+                                    selectedQuestion.difficulty === 'medium' ? 40 : 80;
+                          await updateXp(xp, 1);
+                        }
+                       }
                      }}
                      disabled={selectedOption === null}
                      className="flex-1 bg-primary text-black py-4 rounded-xl font-bold text-sm hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
@@ -875,8 +978,17 @@ If there are syntax errors, output them clearly. If logic is correct, show the r
                      Move Next
                    </button>
                  )}
-                 <button className="px-6 py-4 rounded-xl border border-outline-variant hover:bg-surface-container-highest transition-all">
-                    <Brain className="w-5 h-5 text-on-surface-variant" />
+                 <button 
+                   onClick={handleGetHint}
+                   disabled={isGeneratingHint}
+                   className="px-6 py-4 rounded-xl border border-outline-variant hover:bg-surface-container-highest transition-all disabled:opacity-50"
+                   title="Get an AI Hint"
+                 >
+                   {isGeneratingHint ? (
+                     <Loader2 className="w-5 h-5 text-tertiary animate-spin" />
+                   ) : (
+                     <Brain className="w-5 h-5 text-tertiary" />
+                   )}
                  </button>
               </div>
            </motion.div>

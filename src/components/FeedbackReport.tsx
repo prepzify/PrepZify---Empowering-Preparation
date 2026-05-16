@@ -14,6 +14,7 @@ import { InterviewFeedback } from '../types';
 
 interface FeedbackReportProps {
   feedback: InterviewFeedback;
+  transcript?: { role: string, chunk: string, timestamp: number }[];
   onClose: () => void;
 }
 
@@ -40,7 +41,7 @@ const Progress = ({ value, className = "" }: { value: number, className?: string
   </div>
 );
 
-export default function FeedbackReport({ feedback, onClose }: FeedbackReportProps) {
+export default function FeedbackReport({ feedback, transcript, onClose }: FeedbackReportProps) {
   return (
     <div className="space-y-6 max-h-[80vh] overflow-auto pr-2 custom-scrollbar">
       <div className="flex items-center justify-between">
@@ -159,6 +160,33 @@ export default function FeedbackReport({ feedback, onClose }: FeedbackReportProp
         <h4 className="font-bold mb-2">Executive Summary</h4>
         <p className="text-sm text-gray-600 leading-relaxed italic">"{feedback.summary}"</p>
       </div>
+
+      {transcript && transcript.length > 0 && (
+        <section className="space-y-4">
+          <h3 className="font-bold flex items-center gap-2 pt-4 border-t border-gray-100">
+            <MessageSquare className="text-indigo-500" size={20} />
+            Interview Transcript
+          </h3>
+          <div className="space-y-4 bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
+            {transcript.map((msg, idx) => (
+              <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                <div className={`flex flex-col gap-1 max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2">
+                    {msg.role === 'user' ? 'You' : 'EliteInterviewer AI'}
+                  </span>
+                  <div className={`p-4 rounded-2xl text-sm leading-relaxed ${
+                    msg.role === 'user' 
+                      ? 'bg-indigo-600 text-white rounded-tr-none' 
+                      : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none shadow-sm'
+                  }`}>
+                    {msg.chunk}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

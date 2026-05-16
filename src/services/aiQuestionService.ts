@@ -11,8 +11,9 @@ export async function generateAIQuestions(
 
   if (category === 'coding') {
     prompt = `Generate exactly 10 coding problems for ${deptName} students on "${topic}". Mix easy (4), medium (4), hard (2).
-Return ONLY a valid JSON array, no markdown code blocks:
-[{"title":"...","content":"Full problem description","difficulty":"easy|medium|hard","examples":[{"input":"...","output":"..."}],"constraints":["..."],"starterCode":"// starter code"}]`;
+Return ONLY a valid JSON array, no markdown code blocks. 
+Include a "starterCode" field with a JavaScript function template that reflects the problem's expected input (e.g. "const solve = (nums, target) => {\n  \n};").
+[{"title":"...","content":"Full problem description","difficulty":"easy|medium|hard","examples":[{"input":"...","output":"..."}],"constraints":["..."],"starterCode":"..."}]`;
   } else if (category === 'aptitude') {
     prompt = `Generate exactly 10 aptitude MCQ questions for ${deptName} students on "${topic}". Mix easy (4), medium (4), hard (2).
 Return ONLY a valid JSON array, no markdown code blocks:

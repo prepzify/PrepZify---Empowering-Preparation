@@ -1,14 +1,10 @@
-import { GoogleGenAI } from "@google/genai";
+// src/services/geminiService.ts
 
-const getApiKey = () => {
-  try {
-    return process.env.GEMINI_API_KEY || "";
-  } catch {
-    return "";
-  }
+export const models = {
+  flash: "gemini-3-flash-preview",
+  pro: "gemini-3-flash-preview", 
+  lite: "gemini-3.1-flash-lite"
 };
-
-export const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -32,12 +28,6 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
   throw lastError;
 }
 
-export const models = {
-  flash: "gemini-3-flash-preview",
-  pro: "gemini-3.1-pro-preview",
-  lite: "gemini-3.1-flash-lite-preview"
-};
-
 export async function generateContent(params: {
   model?: string;
   systemInstruction?: string;
@@ -45,70 +35,59 @@ export async function generateContent(params: {
   responseMimeType?: "text/plain" | "application/json";
 }) {
   return withRetry(async () => {
-    try {
-      const response = await ai.models.generateContent({
-        model: params.model || models.flash,
-        contents: params.prompt,
-        config: {
-          systemInstruction: params.systemInstruction,
-          responseMimeType: params.responseMimeType,
-        },
-      });
+    const response = await fetch('/api/gemini/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
 
-      if (!response.text) {
-        throw new Error("Empty response from Gemini");
-      }
-
-      return response.text;
-    } catch (error: any) {
-      console.error("Gemini API Error:", error);
-      if (error?.message?.includes("API key")) {
-        throw new Error("Missing or invalid Gemini API Key. Please check your environment variables.");
-      }
-      throw error;
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Failed to generate content');
     }
+
+    const data = await response.json();
+    return data.text;
   });
 }
 
 export async function generateInterviewQuestion(history: { role: string; content: string }[], role: string) {
-  const contents = history.length > 0 
-    ? history.map(h => ({
-        role: h.role === 'ai' ? 'model' : 'user',
-        parts: [{ text: h.content }]
-      }))
-    : [{ role: 'user', parts: [{ text: `Start a technical interview for a ${role} position.` }] }];
-
-  // Note: generateInterviewQuestion uses a more complex contents structure, so we handle it manually or refactor helper
-  // For now, let's just make sure it stays functional
-  try {
-    const response = await ai.models.generateContent({
-      model: models.flash,
-      contents,
-      config: {
-        systemInstruction: `You are "EliteInterviewer AI," a senior technical recruiter and placement officer specialized in BTech campus placements. Your goal is to conduct a high-stakes, realistic mock interview for engineering students preparation.
+  const systemInstruction = `You are Olivia, a friendly, professional female technical recruiter and senior engineering interviewer for top tech companies. Your goal is to conduct a high-stakes, realistic but supportive mock interview for engineering student placements. Keep your responses extremely brief, human-sounding, and conversational to reduce latency.
 
 OPERATIONAL GUIDELINES:
-1. BE CONVERSATIONAL: Write for the ear. Avoid bullet points, long lists, or complex markdown. Use natural, human-like speech.
-2. ONE QUESTION AT A TIME: Never ask multiple questions at once. Wait for the user's response.
-3. HANDS-FREE FLOW: End every response with a "bridge phrase" to hand the floor back to the student. Examples: "Tell me about your approach," "What's your take on that?", "I'd love to hear your thoughts on this."
-4. ACTIVE LISTENING: Start your response by briefly acknowledging or validating the student's previous answer (e.g., "That's a solid explanation of recursion," or "Interesting project choice.").
-5. STEADY PROGRESSION: Follow these stages:
-   - Stage 1: Introduction. Ask for the student's name and engineering branch if not known.
-   - Stage 2: Technical. Deep dive into CS fundamentals (DSA, Networking, OS) and their specific tech stack.
-   - Stage 3: HR & Behavioral. Situational questions, leadership, and goals.
-6. PROBING & HINTS: If an answer is too short, ask them to expand. If they are stuck, provide a small, helpful hint to keep the flow.
+1. BE CONVERSATIONAL: Speak exactly like a real human girl would speak in a video call. Use conversational fillers occasionally ("Hmm," "Right," "Wow"). Avoid bullet points, long lists, or complex markdown. 
+2. EXTREMELY BRIEF: Keep your responses to 1-3 sentences maximum. The user is waiting on a live call with you.
+3. ONE QUESTION AT A TIME: Never ask multiple questions at once. Wait for the user's response.
+4. HANDS-FREE FLOW: End every response with a natural handoff back to the student. Examples: "Tell me about your approach?", "What's your take on that?"
+5. ACTIVE LISTENING: Start your response by briefly acknowledging the student's previous answer.
+6. STEADY PROGRESSION: Follow these stages:
+   - Stage 1: Introduction. Ask for their name and branch if not known.
+   - Stage 2: Technical/Role-specific. Deep dive.
+   - Stage 3: HR & Behavioral.
 
 Return your response in structured JSON format with the following keys:
 - feedback: An object containing "strengths" (array of strings) and "improvements" (array of strings) based on the user's PREVIOUS answer. If this is the start, leave these arrays empty.
-- nextQuestion: A string containing the next technical challenge or follow-up question.`,
-        responseMimeType: "application/json",
-      }
+- nextQuestion: A string containing exactly what you want to say out loud to the candidate.`;
+
+  return withRetry(async () => {
+    const response = await fetch('/api/gemini/interview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history,
+        role,
+        systemInstruction
+      })
     });
-    return response.text!;
-  } catch (error) {
-    console.error("Gemini API Error (generateInterview):", error);
-    throw error;
-  }
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Failed to generate interview question');
+    }
+
+    const data = await response.json();
+    return data.text;
+  });
 }
 
 export async function analyzeCode(code: string, language: string) {
@@ -127,18 +106,34 @@ export async function analyzeResume(resumeText: string, jobTitle: string = 'Gene
   return generateContent({
     prompt: `Analyze the following resume in the context of the job title "${jobTitle}" and description: "${jobDescription}".
 
-Provide feedback in JSON format. 
+Provide an EXTREMELY detailed feedback in JSON format. 
 Include: 
-- score (0-100): overall match score for this specific role.
-- keyStrengths (array of strings): areas where the candidate excels for this role.
-- areasForImprovement (array of strings): skill gaps or weak points relative to the job requirements.
-- atsCompatibility (string): detailed technical feedback on how an ATS would parser this for this role.
-- summary (string): a high-level overview of the fit.
-- recommendations (array of strings): specific additions or changes to maximize impact for this CATEGORY of job.
+- score (0-100): overall ATS match score.
+- placementProbability (0-100): estimated chance of selection.
+- readinessScore (0-100): how ready they are for immediate deployment.
+- keyStrengths (array of strings): areas where the candidate excels.
+- skillGaps (array of objects with {skill: string, impact: "High" | "Medium" | "Low"}): missing critical technologies.
+- resumeFormatting (object with {score: number, suggestions: string[]}): ATS readability check.
+- grammarAndCommunication (object with {score: number, items: string[]}): quality of writing.
+- industryRoadmap (array of objects with {timeframe: string, goal: string, tasks: string[]}): 3m, 6m, 1y plan.
+- summary (string): executive summary.
+- projectRecommendations (array of strings): specific projects to build to fill gaps.
 
 Resume:
 ${resumeText}`,
     responseMimeType: "application/json",
+    model: models.flash
+  });
+}
+
+export async function generateQuestionHint(questionTitle: string, questionContent: string, category: string) {
+  return generateContent({
+    prompt: `The student is stuck on an assessment question. Provide a subtle, helpful hint that guides them towards the right answer without giving it away directly. 
+    
+    Question Title: ${questionTitle}
+    Category: ${category}
+    Question Content: ${questionContent}`,
+    systemInstruction: "You are an expert engineering tutor. Your hints are short, insightful, and encourage critical thinking.",
     model: models.flash
   });
 }
@@ -150,22 +145,27 @@ export async function extractTextFromImage(file: File) {
       new Uint8Array(arrayBuffer)
         .reduce((data, byte) => data + String.fromCharCode(byte), '')
     );
-    const response = await ai.models.generateContent({
-      model: models.flash,
-      contents: [{
-        role: 'user',
-        parts: [
-          { text: "Extract all text from this resume image exactly as it appears. Maintain the formatting if possible. Output only the text content." },
-          {
-            inlineData: {
-              data: base64,
-              mimeType: file.type
-            }
-          }
-        ]
-      }]
+    
+    const response = await fetch('/api/gemini/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: `Extract all text from this resume image exactly as it appears. Maintain the formatting if possible. Output only the text content.`,
+        model: models.flash,
+        image: {
+          data: base64,
+          mimeType: file.type
+        }
+      })
     });
-    return response.text!;
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Failed to extract text');
+    }
+
+    const data = await response.json();
+    return data.text;
   } catch (error) {
     console.error("Gemini API Error (extractTextFromImage):", error);
     throw error;

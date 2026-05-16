@@ -32,16 +32,19 @@ service cloud.firestore {
       return data.keys().hasAll(['userId', 'totalSessions']) &&
              data.userId is string && data.userId.size() <= 128 &&
              data.totalSessions is number &&
-             (!('averageScore' in data) || data.averageScore is number) &&
-             (!('streak' in data) || data.streak is number) &&
-             (!('lastActive' in data) || data.lastActive is timestamp);
+             (!('averageScore' in data) || data.averageScore == null || data.averageScore is number) &&
+             (!('streak' in data) || data.streak == null || data.streak is number) &&
+             (!('xp' in data) || data.xp == null || data.xp is number) &&
+             (!('questionsSolved' in data) || data.questionsSolved == null || data.questionsSolved is number) &&
+             (!('lastActive' in data) || data.lastActive == null || data.lastActive is timestamp);
     }
 
     match /users/{userId} {
       allow get: if isOwner(userId);
+      allow list: if isSignedIn();
       allow create: if isOwner(userId) && isValidUserStats(incoming()) && incoming().userId == userId;
       allow update: if isOwner(userId) && isValidUserStats(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['totalSessions', 'averageScore', 'streak', 'lastActive'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['totalSessions', 'averageScore', 'streak', 'xp', 'questionsSolved', 'lastActive'])
       );
     }
 
@@ -50,11 +53,12 @@ service cloud.firestore {
       return data.keys().hasAll(['userId', 'role', 'mode', 'startTime', 'status']) &&
              data.userId is string && data.userId == request.auth.uid &&
              data.role is string && data.role.size() <= 200 &&
-             data.mode in ['chat', 'video', 'audio'] &&
+             data.mode in ['video', 'audio'] &&
              data.startTime is timestamp &&
              data.status in ['active', 'completed'] &&
-             (!('endTime' in data) || data.endTime is timestamp) &&
-             (!('selectedRole' in data) || data.selectedRole is string);
+             (!('endTime' in data) || data.endTime == null || data.endTime is timestamp) &&
+             (!('selectedRole' in data) || data.selectedRole == null || data.selectedRole is string) &&
+             (!('feedback' in data) || data.feedback == null || data.feedback is map);
     }
 
     match /interviews/{interviewId} {
@@ -62,19 +66,19 @@ service cloud.firestore {
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && isValidInterviewSession(incoming()) && isValidId(interviewId);
       allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidInterviewSession(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'endTime', 'selectedRole'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'endTime', 'selectedRole', 'feedback'])
       );
       allow delete: if isSignedIn() && existing().userId == request.auth.uid;
     }
 
     // --- Message Rules ---
     function isValidMessage(data) {
-      return data.keys().hasAll(['sessionId', 'role', 'content', 'timestamp']) &&
-             data.sessionId is string &&
-             data.role in ['ai', 'user'] &&
+      return data.keys().hasAll(['role', 'content', 'timestamp']) &&
+             data.role in ['ai', 'model', 'user'] &&
              data.content is string && data.content.size() <= 10000 &&
              data.timestamp is timestamp &&
-             (!('feedback' in data) || (
+             (!('sessionId' in data) || data.sessionId is string) &&
+             (!('feedback' in data) || data.feedback == null || (
                data.feedback is map &&
                (!('strengths' in data.feedback) || data.feedback.strengths is list) &&
                (!('improvements' in data.feedback) || data.feedback.improvements is list)
@@ -87,6 +91,95 @@ service cloud.firestore {
       allow create: if isSignedIn() && 
                       get(/databases/$(database)/documents/interviews/$(interviewId)).data.userId == request.auth.uid &&
                       isValidMessage(incoming()) && isValidId(messageId);
+    }
+
+    // --- ResumeAnalysis Rules ---
+    function isValidResumeAnalysis(data) {
+      return data.keys().hasAll(['resumeText', 'timestamp']) &&
+             data.resumeText is string && data.resumeText.size() <= 500000 &&
+             data.timestamp is timestamp &&
+             (!('jobTitle' in data) || data.jobTitle == null || data.jobTitle is string) &&
+             (!('jobDescription' in data) || data.jobDescription == null || data.jobDescription is string) &&
+             (!('fileName' in data) || data.fileName == null || data.fileName is string) &&
+             (!('feedback' in data) || data.feedback == null || data.feedback is map) &&
+             (!('matchingJobs' in data) || data.matchingJobs == null || data.matchingJobs is list);
+    }
+
+    match /users/{userId}/resumes/{resumeId} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidResumeAnalysis(incoming()) && isValidId(resumeId);
+    }
+
+    // --- StudyPath Rules ---
+    function isValidStudyPath(data) {
+      return data.keys().hasAll(['id', 'title', 'modules', 'timestamp']) &&
+             isValidId(data.id) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.modules is list &&
+             data.timestamp is timestamp &&
+             (!('description' in data) || data.description == null || (data.description is string && data.description.size() <= 2000)) &&
+             (!('estimatedTime' in data) || data.estimatedTime == null || (data.estimatedTime is string && data.estimatedTime.size() <= 100)) &&
+             (!('difficulty' in data) || data.difficulty == null || data.difficulty in ['Beginner', 'Intermediate', 'Advanced']) &&
+             (!('finalProject' in data) || data.finalProject == null || data.finalProject is map) &&
+             (!('completedTasks' in data) || data.completedTasks == null || data.completedTasks is list);
+    }
+
+    match /users/{userId}/studyPaths/{pathId} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidStudyPath(incoming()) && isValidId(pathId);
+    }
+
+    // --- ExpertBooking Rules ---
+    function isValidExpertBooking(data) {
+      return data.keys().hasAll(['id', 'userId', 'userName', 'phoneNumber', 'scheduledAt', 'preferredContact', 'timestamp']) &&
+             isValidId(data.id) &&
+             data.userId == request.auth.uid &&
+             data.userName is string && data.userName.size() <= 200 &&
+             data.phoneNumber is string && data.phoneNumber.size() <= 20 &&
+             data.scheduledAt is timestamp &&
+             data.preferredContact in ['whatsapp', 'insite'] &&
+             data.timestamp is timestamp &&
+             (!('domain' in data) || data.domain == null || data.domain is string) &&
+             (!('jobDetails' in data) || data.jobDetails == null || data.jobDetails is string) &&
+             (!('status' in data) || data.status == null || data.status in ['pending', 'confirmed', 'completed', 'cancelled']);
+    }
+
+    match /users/{userId}/expertBookings/{bookingId} {
+      allow read, delete: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidExpertBooking(incoming()) && isValidId(bookingId);
+      allow update: if isOwner(userId) && isValidExpertBooking(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'scheduledAt', 'preferredContact', 'phoneNumber', 'domain', 'jobDetails'])
+      );
+    }
+
+    // --- AppliedJob Rules ---
+    function isValidAppliedJob(data) {
+      return data.keys().hasAll(['jobId', 'appliedAt']) &&
+             data.jobId is string &&
+             data.appliedAt is timestamp &&
+             (!('jobTitle' in data) || data.jobTitle == null || data.jobTitle is string) &&
+             (!('company' in data) || data.company == null || data.company is string) &&
+             (!('status' in data) || data.status == null || data.status is string);
+    }
+
+    match /users/{userId}/appliedJobs/{jobId} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidAppliedJob(incoming()) && isValidId(jobId);
+    }
+
+    // --- AssessmentQuestion Rules ---
+    function isValidAssessmentQuestion(data) {
+      return data.keys().hasAll(['type', 'question', 'options', 'correctAnswer', 'explanation']) &&
+             data.type in ['aptitude', 'coding'] &&
+             data.question is string && data.question.size() <= 2000 &&
+             data.options is list && data.options.size() >= 2 &&
+             data.correctAnswer is number &&
+             data.explanation is string && data.explanation.size() <= 5000;
+    }
+
+    match /questions/{questionId} {
+      allow list, get: if isSignedIn();
+      allow write: if false; // Restricted to admin (manage via Firebase Console)
     }
   }
 }

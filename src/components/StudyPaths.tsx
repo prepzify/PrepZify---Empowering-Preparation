@@ -1,481 +1,473 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { generateStudyPath, StudyPath } from '../services/studyPathService';
+import { dbService } from '../services/dbService';
+import { auth } from '../lib/firebase';
 import { 
-  CheckCircle2, 
-  Circle, 
-  Lock, 
-  Zap, 
-  Flame, 
-  Trophy, 
-  ChevronRight,
-  BookOpen,
-  Layers,
-  Cpu,
-  Network,
-  Cloud,
-  Timer,
-  ChevronDown,
-  LayoutGrid,
-  Route,
-  PlayCircle,
-  Star,
-  GraduationCap,
+  BookOpen, 
+  Clock, 
+  BarChart, 
+  ExternalLink, 
+  PlayCircle, 
+  FileText, 
+  Compass,
+  ArrowRight,
+  CheckCircle2,
+  Lock,
   Sparkles,
-  CreditCard
+  Loader2
 } from 'lucide-react';
 
-const courses = [
-  {
-    id: 1,
-    title: "Mastering Data Structures",
-    platform: "Coursera",
-    duration: "12 weeks",
-    rating: 4.8,
-    students: "125k",
-    topic: "Computer Science",
-    isFree: true,
-    description: "Deep dive into Arrays, Linked Lists, Trees, and Graphs with memory management focus."
-  },
-  {
-    id: 2,
-    title: "Machine Learning Engineering",
-    platform: "Coursera",
-    duration: "10 weeks",
-    rating: 4.9,
-    students: "85k",
-    topic: "AI/ML",
-    isFree: true,
-    description: "Build and deploy production-grade ML models using TensorFlow and PyTorch."
-  },
-  {
-    id: 3,
-    title: "System Design for Scale",
-    platform: "Elite Prep",
-    duration: "6 weeks",
-    rating: 5.0,
-    students: "12k",
-    topic: "Architecture",
-    isFree: true,
-    description: "Architecting high-availability systems handles millions of RPS."
-  },
-  {
-    id: 4,
-    title: "The Frontend Architect",
-    platform: "Elite Prep",
-    duration: "8 weeks",
-    rating: 4.7,
-    students: "45k",
-    topic: "Web Dev",
-    isFree: true,
-    description: "Advanced React patterns, micro-frontends, and performance monitoring."
-  },
-  {
-    id: 5,
-    title: "Advanced Database Internals",
-    platform: "Stanford",
-    duration: "14 weeks",
-    rating: 4.9,
-    students: "30k",
-    topic: "Systems",
-    isFree: false,
-    description: "LSM trees, B-Trees, transaction isolation, and query optimization."
-  },
-  {
-    id: 6,
-    title: "Distributed Systems Theory",
-    platform: "MIT OpenCourseWare",
-    duration: "16 weeks",
-    rating: 5.0,
-    students: "20k",
-    topic: "Distributed Systems",
-    isFree: false,
-    description: "Paxos, Raft, Byzantine Fault Tolerance, and consistency models."
-  },
-  {
-    id: 7,
-    title: "Low-Level Optimization",
-    platform: "Elite Prep",
-    duration: "5 weeks",
-    rating: 4.8,
-    students: "8k",
-    topic: "Performance",
-    isFree: false,
-    description: "Assembly, Cache locality, SIMD instructions, and compiler optimizations."
-  }
-];
-
-const milestones = [
-  { 
-    id: 1, 
-    title: 'Data Structures & Big O', 
-    description: 'Mastering time and space complexity with advanced graph traversal and amortized analysis.', 
-    status: 'completed', 
-    duration: '2.5h', 
-    icon: LayoutGrid,
-    tags: ['DS', 'Algorithms']
-  },
-  { 
-    id: 2, 
-    title: 'Concurrency & Multithreading', 
-    description: 'Thread pools, mutexes, memory barriers, and lock-free programming in high-performance environments.', 
-    status: 'in-progress', 
-    duration: '4.0h', 
-    icon: Cpu,
-    tags: ['Low-Level', 'System']
-  },
-  { 
-    id: 3, 
-    title: 'Distributed Systems: LLD', 
-    description: 'Designing highly available systems: Paxos, Raft, consistency models, and gossip protocols.', 
-    status: 'locked', 
-    duration: '8.5h', 
-    icon: Network,
-    tags: ['Architecture']
-  },
-  { 
-    id: 4, 
-    title: 'Cloud Native & K8s', 
-    description: 'Service meshes, sidecar patterns, and infrastructure as code at massive scale.', 
-    status: 'locked', 
-    duration: '6.0h', 
-    icon: Cloud,
-    tags: ['DevOps', 'Scale']
-  },
-];
-
 export default function StudyPaths() {
-  const [activeView, setActiveView] = useState<'roadmap' | 'courses'>('roadmap');
   const [searchParams] = useSearchParams();
-  const upgradeRef = useRef<HTMLDivElement>(null);
+  const querySkill = searchParams.get('skill');
+  
+  const [skill, setSkill] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [path, setPath] = useState<StudyPath | null>(null);
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
 
+  const [activeTab, setActiveTab] = useState<'roadmaps' | 'courses'>('roadmaps');
+  const [courseCategory, setCourseCategory] = useState('All');
+  const [isPro, setIsPro] = useState(false); // Mock subscription status
+
+  const EXPERT_COURSES = [
+    // Computer Science
+    { id: 'cse1', title: 'Data Structures & Algorithms', category: 'Computer Science', provider: 'LeetCode Academy', link: '#', isFree: true, level: 'Beginner' },
+    { id: 'cse2', title: 'System Design Interview', category: 'Computer Science', provider: 'DesignGurus', link: '#', isFree: true, level: 'Intermediate' },
+    { id: 'cse3', title: 'Advanced Operating Systems', category: 'Computer Science', provider: 'Georgia Tech', link: '#', isFree: true, level: 'Advanced' },
+    { id: 'cse4', title: 'Full Stack Web Dev', category: 'Computer Science', provider: 'Udemy', link: '#', isFree: false, level: 'Intermediate' },
+    
+    // AI & DS
+    { id: 'ai1', title: 'Machine Learning Specialization', category: 'AI & Data Science', provider: 'DeepLearning.AI', link: '#', isFree: true, level: 'Intermediate' },
+    { id: 'ai2', title: 'Generative AI Fundamentals', category: 'AI & Data Science', provider: 'Google Cloud', link: '#', isFree: true, level: 'Beginner' },
+    { id: 'ai3', title: 'Neural Networks & Deep Learning', category: 'AI & Data Science', provider: 'Coursera', link: '#', isFree: true, level: 'Advanced' },
+    { id: 'ai4', title: 'AI for Business', category: 'AI & Data Science', provider: 'Wharton Online', link: '#', isFree: false, level: 'Beginner' },
+
+    // ECE
+    { id: 'ece1', title: 'Digital Signal Processing', category: 'ECE', provider: 'NPTEL', link: '#', isFree: true, level: 'Beginner' },
+    { id: 'ece2', title: 'Embedded Systems', category: 'ECE', provider: 'EdX', link: '#', isFree: true, level: 'Intermediate' },
+    { id: 'ece3', title: 'VLSI Design', category: 'ECE', provider: 'Intel Academy', link: '#', isFree: true, level: 'Advanced' },
+    { id: 'ece4', title: '5G Communication Systems', category: 'ECE', provider: 'Qualified Experts', link: '#', isFree: false, level: 'Advanced' },
+
+    // Mechanical
+    { id: 'mech1', title: 'Thermodynamics', category: 'Mechanical', provider: 'Khan Academy', link: '#', isFree: true, level: 'Beginner' },
+    { id: 'mech2', title: 'Fluid Mechanics', category: 'Mechanical', provider: 'MIT OCW', link: '#', isFree: true, level: 'Intermediate' },
+    { id: 'mech3', title: 'Control Systems', category: 'Mechanical', provider: 'Stanford Engineering', link: '#', isFree: true, level: 'Advanced' },
+    { id: 'mech4', title: 'Robotics Engineering', category: 'Mechanical', provider: 'Boston Dynamics', link: '#', isFree: false, level: 'Advanced' },
+
+    // Civil
+    { id: 'civ1', title: 'Structural Analysis', category: 'Civil', provider: 'Civil Simplified', link: '#', isFree: true, level: 'Beginner' },
+    { id: 'civ2', title: 'Geotechnical Engineering', category: 'Civil', provider: 'ICE', link: '#', isFree: true, level: 'Intermediate' },
+    { id: 'civ3', title: 'Surveying Theory', category: 'Civil', provider: 'Trimble Academy', link: '#', isFree: true, level: 'Advanced' },
+    { id: 'civ4', title: 'Sustainable Smart Cities', category: 'Civil', provider: 'Global Academy', link: '#', isFree: false, level: 'Intermediate' },
+  ];
+
+  const categories = ['All', ...Array.from(new Set(EXPERT_COURSES.map(c => c.category)))];
+  const filteredCourses = courseCategory === 'All' 
+    ? EXPERT_COURSES 
+    : EXPERT_COURSES.filter(c => c.category === courseCategory);
+
+  // Load from Firebase on mount
   useEffect(() => {
-    if (searchParams.get('upgrade') === 'true') {
-      if (activeView !== 'courses') {
-        setActiveView('courses');
+    const loadData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        setIsGenerating(true);
+        const paths = await dbService.getStudyPaths(user.uid);
+        
+        if (paths && paths.length > 0) {
+          const currentPath: any = paths[0]; // Get the most recent one
+          setPath(currentPath);
+          setSkill(currentPath.title || '');
+          if (currentPath.completedTasks) {
+            setCompletedTasks(new Set(currentPath.completedTasks));
+          }
+        }
+        setIsGenerating(false);
+      } else {
+        // Fallback to localStorage for guest
+        setSkill(querySkill || localStorage.getItem('bt_study_skill') || '');
+        const savedPath = localStorage.getItem('bt_study_path');
+        if (savedPath) setPath(JSON.parse(savedPath));
+        const savedCompleted = localStorage.getItem('bt_study_completed');
+        if (savedCompleted) setCompletedTasks(new Set(JSON.parse(savedCompleted)));
       }
-      // Use a slightly longer timeout to ensure content is rendered
-      const timer = setTimeout(() => {
-        upgradeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 300);
-      return () => clearTimeout(timer);
+    };
+    loadData();
+  }, []);
+
+  // Save to Firebase/localStorage on changes
+  useEffect(() => {
+    const saveData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        if (path) {
+          await dbService.saveStudyPath(user.uid, {
+            ...path,
+            completedTasks: Array.from(completedTasks)
+          });
+        }
+      } else {
+        localStorage.setItem('bt_study_skill', skill);
+        if (path) localStorage.setItem('bt_study_path', JSON.stringify(path));
+        localStorage.setItem('bt_study_completed', JSON.stringify(Array.from(completedTasks)));
+      }
+    };
+    
+    const timeout = setTimeout(saveData, 2000);
+    return () => clearTimeout(timeout);
+  }, [path, completedTasks]);
+
+  // Initial generation from query param
+  useEffect(() => {
+    if (querySkill && querySkill !== path?.title) {
+        handleGenerate(querySkill);
     }
-  }, [searchParams, activeView]);
+  }, [querySkill]);
+
+  const handleGenerate = async (skillToSearch?: string) => {
+    const targetSkill = skillToSearch || skill;
+    if (!targetSkill.trim()) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateStudyPath(targetSkill);
+      setPath(result);
+      if (skillToSearch) setSkill(skillToSearch);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const toggleTask = async (moduleId: number, taskId: number) => {
+    const id = `${moduleId}-${taskId}`;
+    const newSet = new Set(completedTasks);
+    const wasCompleted = newSet.has(id);
+    
+    if (wasCompleted) newSet.delete(id);
+    else {
+      newSet.add(id);
+      // Increment XP for completion
+      const user = auth.currentUser;
+      if (user) {
+        // Module completion grants 150 XP and 1 solved question
+        await dbService.incrementStats(user.uid, 150, 1);
+      }
+    }
+    setCompletedTasks(newSet);
+  };
 
   return (
-    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-64px)] overflow-y-auto lg:overflow-hidden bg-background">
-      {/* Main Roadmap Area */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-        <div className="max-w-5xl mx-auto p-4 md:p-12">
-          {/* Header Section */}
-          <div className="mb-8 lg:mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-             <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
-                   <Route className="w-3 h-3" />
-                   <span className="text-[10px] font-bold uppercase tracking-widest">Active Roadmap</span>
-                </div>
-                <h2 className="text-3xl md:text-5xl font-black text-on-surface tracking-tight">Backend Mastery <span className="text-primary">2.0</span></h2>
-             </div>
-
-             <div className="flex gap-2 p-1 bg-surface-container rounded-2xl border border-outline-variant/30">
-                <button 
-                  onClick={() => setActiveView('roadmap')}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === 'roadmap' ? 'bg-primary text-black shadow-lg' : 'text-on-surface-variant hover:bg-surface-container-high'}`}
-                >
-                  <Route className="w-4 h-4" />
-                  Roadmap
-                </button>
-                <button 
-                  onClick={() => setActiveView('courses')}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === 'courses' ? 'bg-primary text-black shadow-lg' : 'text-on-surface-variant hover:bg-surface-container-high'}`}
-                >
-                  <GraduationCap className="w-4 h-4" />
-                  Expert Courses
-                </button>
-             </div>
-          </div>
-
-          {activeView === 'roadmap' ? (
-            /* Timeline Nodes */
-            <div className="relative space-y-12">
-              {/* Visual Continuity Line */}
-              <div className="absolute left-[31px] top-6 bottom-0 w-px bg-gradient-to-b from-primary via-outline-variant to-transparent opacity-30" />
-
-              {milestones.map((milestone, i) => (
-                <motion.div 
-                  key={milestone.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className={`flex gap-10 group relative ${milestone.status === 'locked' ? 'grayscale opacity-60' : ''}`}
-                >
-                  {/* Connector & Icon */}
-                  <div className="relative z-10 hidden sm:block">
-                     <div className={`w-16 h-16 rounded-2xl border flex items-center justify-center transition-all duration-500 bg-surface-container-low shadow-2xl
-                       ${milestone.status === 'completed' ? 'border-secondary/40 text-secondary' : 
-                         milestone.status === 'in-progress' ? 'border-primary text-primary active-glow-indigo' : 
-                         'border-outline-variant text-on-surface-variant'}`}
-                     >
-                       <milestone.icon className={`w-7 h-7 ${milestone.status === 'in-progress' ? 'animate-pulse' : ''}`} />
-                     </div>
-                     {milestone.status === 'completed' && (
-                       <div className="absolute -top-2 -right-2 bg-secondary text-black p-1 rounded-full shadow-lg">
-                          <CheckCircle2 className="w-4 h-4" />
-                       </div>
-                     )}
-                  </div>
-
-                  {/* Content Card */}
-                  <div className="flex-1 pb-10 lg:pb-16">
-                     <div className={`bg-surface-container p-5 md:p-8 rounded-3xl border transition-all duration-300 relative group-hover:border-primary/40
-                       ${milestone.status === 'in-progress' ? 'border-primary/30 ring-1 ring-primary/20 bg-gradient-to-br from-surface-container to-primary/5' : 'border-outline-variant/30'}`}
-                     >
-                        <div className="flex justify-between items-start mb-4">
-                           <div className="flex gap-2">
-                              {milestone.tags.map(tag => (
-                                <span key={tag} className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-white/5 text-on-surface-variant border border-white/5">
-                                  {tag}
-                                </span>
-                              ))}
-                           </div>
-                           <div className="flex items-center gap-1.5 text-on-surface-variant">
-                              <Timer className="w-3 h-3" />
-                              <span className="text-[10px] font-mono font-bold tracking-tighter">{milestone.duration}</span>
-                           </div>
-                        </div>
-
-                        <h3 className={`text-2xl font-bold mb-3 ${milestone.status === 'in-progress' ? 'text-white' : 'text-on-surface'}`}>
-                          {milestone.title}
-                        </h3>
-                        <p className="text-on-surface-variant leading-relaxed text-sm mb-6 max-w-2xl">
-                          {milestone.description}
-                        </p>
-
-                        <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                          <div className="flex items-center gap-4">
-                             {milestone.status === 'in-progress' ? (
-                               <button className="bg-primary text-black px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
-                                 Resume Deep Dive
-                                 <ChevronRight className="w-4 h-4" />
-                               </button>
-                             ) : milestone.status === 'completed' ? (
-                               <span className="text-secondary text-[10px] font-bold uppercase flex items-center gap-2">
-                                 <CheckCircle2 className="w-4 h-4" /> Completed & Mastery Attained
-                               </span>
-                             ) : (
-                               <span className="text-on-surface-variant text-[10px] font-bold uppercase flex items-center gap-2 opacity-60">
-                                 <Lock className="w-4 h-4" /> Prerequisite Required
-                               </span>
-                             )}
-                          </div>
-                          
-                          <div className="flex -space-x-3 opacity-60">
-                             {[1,2,3,4].map(i => (
-                               <div key={i} className="w-7 h-7 rounded-full border-2 border-surface-container bg-surface-container-high" />
-                             ))}
-                          </div>
-                        </div>
-                     </div>
-                  </div>
-                </motion.div>
-              ))}
-              
-              <div className="pb-20 flex justify-center">
-                 <button className="group flex flex-col items-center gap-3 text-on-surface-variant hover:text-white transition-all">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Load Future Milestones</span>
-                    <ChevronDown className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
-                 </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-8 pb-24">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 {courses.map((course) => (
-                   <motion.div 
-                     key={course.id}
-                     initial={{ opacity: 0, y: 20 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     className={`group bg-surface-container p-6 rounded-3xl border border-outline-variant/30 hover:border-primary/40 transition-all duration-300 relative overflow-hidden ${!course.isFree ? 'opacity-90' : ''}`}
-                   >
-                     {!course.isFree && (
-                       <div className="absolute top-4 right-4 z-20">
-                          <div className="bg-secondary/10 border border-secondary/20 text-secondary px-3 py-1 rounded-full flex items-center gap-2">
-                             <Sparkles className="w-3 h-3" />
-                             <span className="text-[8px] font-black uppercase tracking-[0.2em]">Elite Pro</span>
-                          </div>
-                       </div>
-                     )}
-
-                     <div className="flex items-start gap-5 mb-6">
-                        <div className={`p-4 rounded-2xl ${course.isFree ? 'bg-primary/5 text-primary' : 'bg-secondary/5 text-secondary'}`}>
-                           <PlayCircle className="w-6 h-6" />
-                        </div>
-                        <div>
-                           <div className="flex items-center gap-2 mb-1">
-                             <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{course.platform}</span>
-                             <span className="w-1 h-1 rounded-full bg-outline-variant" />
-                             <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{course.topic}</span>
-                           </div>
-                           <h4 className="text-xl font-bold text-white tracking-tight leading-tight">{course.title}</h4>
-                        </div>
-                     </div>
-
-                     <p className="text-on-surface-variant text-sm mb-6 leading-relaxed">
-                        {course.description}
-                     </p>
-
-                     <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                        <div className="flex items-center gap-4">
-                           <div className="flex items-center gap-1.5 text-warning">
-                              <Star className="w-3.5 h-3.5 fill-current" />
-                              <span className="text-xs font-bold">{course.rating}</span>
-                           </div>
-                           <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{course.duration}</span>
-                        </div>
-                        
-                        {course.isFree ? (
-                          <button className="px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all">
-                             Start Learning
-                          </button>
-                        ) : (
-                          <div className="flex items-center gap-2 text-on-surface-variant opacity-50">
-                             <Lock className="w-3 h-3" />
-                             <span className="text-[9px] font-black uppercase tracking-[0.2em]">Gated Content</span>
-                          </div>
-                        )}
-                     </div>
-
-                     {!course.isFree && (
-                       <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="bg-secondary text-black px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-2">
-                             Unlock with Pro
-                             <ChevronRight className="w-4 h-4" />
-                          </button>
-                       </div>
-                     )}
-                   </motion.div>
-                 ))}
-               </div>
-
-               {/* Upgrade to Pro Card */}
-               <motion.div 
-                 ref={upgradeRef}
-                 id="upgrade-card"
-                 initial={{ opacity: 0, scale: 0.95 }}
-                 whileInView={{ opacity: 1, scale: 1 }}
-                 className="mt-12 h-auto md:h-[600px] bg-gradient-to-br from-secondary/30 via-primary/20 to-background p-8 md:p-12 rounded-[40px] border border-secondary/20 shadow-2xl relative overflow-hidden flex items-center"
-               >
-                 <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-[100px]" />
-                 <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-secondary/10 rounded-full blur-[100px]" />
-                 
-                 <div className="relative z-10 flex flex-col items-center lg:flex-row gap-8 md:gap-12 text-center lg:text-left">
-                    <div className="p-8 bg-black/40 backdrop-blur-xl rounded-[32px] border border-white/10 shadow-2xl hidden md:block">
-                       <CreditCard className="w-16 h-16 text-secondary" />
-                    </div>
-                    
-                    <div className="flex-1 space-y-4">
-                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary">
-                          <Sparkles className="w-3 h-3" />
-                          <span className="text-[9px] font-black uppercase tracking-widest">Subscription Plan</span>
-                       </div>
-                       <h3 className="text-3xl md:text-4xl font-black text-white tracking-tighter">Accelerate Your Engineering Career</h3>
-                       <p className="text-on-surface-variant text-base md:text-lg max-w-xl">
-                         Unlock 120+ pro courses, certification paths, and 1:1 expert mentorship sessions. 
-                         The ultimate toolkit for senior engineering roles.
-                       </p>
-                    </div>
-
-                    <div className="flex flex-col gap-4 min-w-full md:min-w-[240px]">
-                       <button className="w-full bg-secondary text-black px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-secondary/20 hover:brightness-110 active:scale-95 transition-all">
-                          Upgrade to Pro
-                       </button>
-                       <p className="text-[10px] font-bold text-on-surface-variant text-center uppercase tracking-widest opacity-50">
-                          Billed monthly. Cancel anytime.
-                       </p>
-                    </div>
-                 </div>
-               </motion.div>
-            </div>
-          )}
+    <div className="max-w-7xl mx-auto space-y-8 lg:space-y-12">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div className="space-y-1">
+          <h2 className="text-3xl md:text-4xl font-black text-on-surface tracking-tight">Learning Hub</h2>
+          <p className="text-on-surface-variant max-w-md text-sm md:text-base">Targeted roadmaps and expert-led engineering courses.</p>
         </div>
-      </div>
-
-      {/* Persistence Sidebar */}
-      <aside className="hidden lg:flex w-96 bg-surface-container-low border-l border-outline-variant p-8 flex-col gap-8 custom-scrollbar overflow-y-auto">
-        <div className="space-y-6">
-           <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] flex items-center gap-2">
-              <Zap className="w-3 h-3 text-primary" /> Cognitive Stats
-           </h3>
-
-           <div className="grid grid-cols-1 gap-4">
-              <div className="bg-[#0f172a] p-6 rounded-3xl border border-white/5 space-y-4 relative overflow-hidden group">
-                 <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-colors" />
-                 <div className="flex justify-between items-end relative z-10">
-                    <span className="text-[10px] font-bold text-on-surface-variant uppercase">Current Streak</span>
-                    <Flame className="text-[#f97316] w-5 h-5" />
-                 </div>
-                 <div className="flex items-baseline gap-2 relative z-10">
-                    <span className="text-4xl font-black text-white">14</span>
-                    <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Days Logged</span>
-                 </div>
-              </div>
-
-              <div className="bg-[#0f172a] p-6 rounded-3xl border border-white/5 space-y-4">
-                 <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-bold text-on-surface-variant uppercase">Experience</span>
-                    <Trophy className="text-primary w-5 h-5" />
-                 </div>
-                 <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-white">Mastery <span className="text-primary">II</span></span>
-                 </div>
-                 <div className="space-y-2 pt-2">
-                    <div className="flex justify-between text-[9px] font-bold uppercase text-on-surface-variant tracking-widest">
-                       <span>Progress to Level III</span>
-                       <span>84%</span>
-                    </div>
-                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                       <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: '84%' }}
-                          className="h-full bg-primary"
-                        />
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
-
-        <div className="space-y-6">
-           <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Next Recommended Step</h3>
-           <div className="bg-surface-container border border-primary/20 rounded-3xl p-6 relative group cursor-pointer hover:border-primary/40 transition-colors">
-              <div className="flex items-center gap-4 mb-4">
-                 <div className="p-3 bg-primary/10 rounded-2xl">
-                    <Layers className="w-5 h-5 text-primary" />
-                 </div>
-                 <div>
-                    <h4 className="text-sm font-bold text-white">JVM Internals</h4>
-                    <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">35 Min Assessment</span>
-                 </div>
-              </div>
-              <p className="text-xs text-on-surface-variant leading-relaxed mb-4 group-hover:text-white transition-colors">
-                Deep dive into G1 Garbage Collection and TLAB allocation. Required for 'Concurrency' proficiency.
-              </p>
-              <button className="w-full py-3 bg-white/5 border border-white/5 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-primary hover:text-black transition-all">
-                 Begin Assessment
+        <div className="flex gap-2">
+           <div className="flex bg-surface-container-high rounded-full p-1 border border-outline-variant/30">
+              <button 
+                onClick={() => setActiveTab('roadmaps')}
+                className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'roadmaps' ? 'bg-indigo-500 text-white shadow-lg' : 'text-on-surface-variant hover:text-on-surface'}`}
+              >
+                AI Roadmaps
+              </button>
+              <button 
+                onClick={() => setActiveTab('courses')}
+                className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'courses' ? 'bg-indigo-500 text-white shadow-lg' : 'text-on-surface-variant hover:text-on-surface'}`}
+              >
+                Expert Courses
               </button>
            </div>
         </div>
+      </header>
 
-        <div className="mt-auto pt-8 border-t border-outline-variant/30">
-           <div className="bg-gradient-to-r from-secondary/20 to-primary/20 p-6 rounded-3xl border border-secondary/10 flex items-center justify-between">
-              <div>
-                 <h4 className="font-bold text-sm text-white mb-1">Career Goal: FAANG L6</h4>
-                 <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em]">ETA: October 2026</p>
-              </div>
-              <BookOpen className="w-6 h-6 text-white opacity-40" />
+      {activeTab === 'roadmaps' ? (
+        <>
+          {!path && !isGenerating ? (
+        <div className="max-w-3xl mx-auto py-20 text-center space-y-8">
+           <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center mx-auto text-indigo-400">
+              <Compass size={40} className="animate-pulse" />
+           </div>
+           <div className="space-y-4">
+              <h3 className="text-2xl font-black text-on-surface tracking-tight">What do you want to master today?</h3>
+              <p className="text-on-surface-variant text-sm">Enter a skill or technology to generate a custom 4-week roadmap.</p>
+           </div>
+           <div className="flex gap-3 max-w-lg mx-auto">
+              <input 
+                 type="text" 
+                 value={skill}
+                 onChange={(e) => setSkill(e.target.value)}
+                 onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                 placeholder="e.g. System Design, Kubernetes, React Testing..."
+                 className="flex-1 bg-surface-container border border-outline-variant/30 rounded-2xl px-6 py-4 text-sm focus:border-indigo-400 outline-none transition-all font-bold"
+              />
+              <button 
+                 onClick={() => handleGenerate()}
+                 className="px-8 py-4 bg-indigo-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-500/20"
+              >
+                 Generate
+              </button>
+           </div>
+           <div className="flex flex-wrap justify-center gap-2 pt-4">
+              {['Data Structures', 'Spring Boot', 'Cloud Computing', 'Machine Learning'].map(s => (
+                <button 
+                   key={s} 
+                   onClick={() => {setSkill(s); handleGenerate(s);}}
+                   className="px-4 py-2 bg-surface-container-high rounded-lg text-[10px] font-bold uppercase text-on-surface-variant hover:text-indigo-400 transition-colors"
+                >
+                   {s}
+                </button>
+              ))}
            </div>
         </div>
-      </aside>
+      ) : isGenerating ? (
+        <div className="max-w-3xl mx-auto py-32 text-center space-y-6">
+           <Loader2 className="w-12 h-12 animate-spin mx-auto text-indigo-400" />
+           <div className="space-y-1">
+              <h3 className="text-xl font-black text-on-surface uppercase tracking-[0.2em]">Curating Intelligence</h3>
+              <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest opacity-60">Scanning industry requirements and documentation...</p>
+           </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+           {/* Sidebar: Path Summary */}
+           <div className="col-span-12 lg:col-span-4 space-y-6">
+              <div className="sticky top-10 space-y-6">
+                 <div className="bg-[#0f0f12] border border-white/5 rounded-[40px] p-8 md:p-10 relative overflow-hidden group">
+                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-[80px]" />
+                    
+                    <div className="relative z-10 space-y-6">
+                       <div className="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                          <Sparkles size={12} /> Personalized Roadmap
+                       </div>
+                       
+                       <h1 className="text-3xl font-black text-white leading-tight tracking-tight">{path?.title}</h1>
+                       <p className="text-xs text-white/60 leading-relaxed">{path?.description}</p>
+                       
+                       <div className="grid grid-cols-2 gap-4 pt-4">
+                          <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                             <Clock size={16} className="text-indigo-400 mb-2" />
+                             <span className="text-[10px] font-black text-white/40 uppercase block mb-1">Duration</span>
+                             <span className="text-xs font-black text-white">{path?.estimatedTime}</span>
+                          </div>
+                          <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                             <BarChart size={16} className="text-indigo-400 mb-2" />
+                             <span className="text-[10px] font-black text-white/40 uppercase block mb-1">Difficulty</span>
+                             <span className="text-xs font-black text-white">{path?.difficulty}</span>
+                          </div>
+                       </div>
+
+                       <button 
+                          onClick={() => {
+                            setPath(null);
+                            const user = auth.currentUser;
+                            if (!user) {
+                              localStorage.removeItem('bt_study_path');
+                              localStorage.removeItem('bt_study_completed');
+                            }
+                          }}
+                          className="w-full py-4 bg-indigo-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all mt-4"
+                       >
+                          Try Another Skill
+                       </button>
+                    </div>
+                 </div>
+
+                 <div className="bg-surface-container rounded-3xl p-6 border border-outline-variant/30">
+                    <h4 className="text-[10px] font-black uppercase text-on-surface-variant tracking-widest mb-4">Progress Tracker</h4>
+                    <div className="space-y-4">
+                       <div className="flex justify-between items-end">
+                          <span className="text-2xl font-black text-on-surface">{Math.round((completedTasks.size / (path?.modules.length || 1)) * 100)}%</span>
+                          <span className="text-[10px] font-black text-on-surface-variant uppercase">{completedTasks.size} / {path?.modules.length ?? 0} Steps</span>
+                       </div>
+                       <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                          <motion.div 
+                             initial={{ width: 0 }}
+                             animate={{ width: `${(completedTasks.size / (path?.modules.length || 1)) * 100}%` }}
+                             className="h-full bg-indigo-500" 
+                          />
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
+
+           {/* Main Feed: Modules */}
+           <div className="col-span-12 lg:col-span-8 space-y-8">
+              {path?.modules.map((module, mIdx) => (
+                <div key={mIdx} className="bg-surface-container-low border border-outline-variant/30 rounded-[40px] overflow-hidden group hover:border-indigo-500/30 transition-all">
+                   <div className="px-8 md:px-10 py-8 md:py-10 space-y-8">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                         <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                               <span className="text-[10px] font-black text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded uppercase tracking-widest">Module {mIdx + 1}</span>
+                               <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">• {module.estimatedHours} hrs</span>
+                            </div>
+                            <h2 className="text-2xl font-black text-on-surface tracking-tight">{module.title}</h2>
+                         </div>
+                         <button 
+                            onClick={() => toggleTask(mIdx, 0)}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${completedTasks.has(`${mIdx}-0`) ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-on-surface text-surface'}`}
+                         >
+                            {completedTasks.has(`${mIdx}-0`) ? <CheckCircle2 size={14} /> : 'Complete Module'}
+                         </button>
+                      </div>
+
+                      <p className="text-sm text-on-surface-variant leading-relaxed font-medium opacity-80">{module.description}</p>
+
+                      <div className="space-y-4">
+                         <h4 className="text-[10px] font-black uppercase text-on-surface-variant tracking-widest">Curated Resources</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {module.resources.map((res, rIdx) => (
+                              <a 
+                                 key={rIdx} 
+                                 href={res.url} 
+                                 target="_blank" 
+                                 rel="noreferrer"
+                                 className="flex items-center gap-4 p-4 bg-surface-container-high rounded-2xl border border-outline-variant/20 hover:border-indigo-400 transition-all group/res"
+                              >
+                                 <div className="p-3 bg-white/5 rounded-xl text-on-surface-variant group-hover/res:text-indigo-400 transition-colors">
+                                    {res.type === 'video' ? <PlayCircle size={20} /> : <FileText size={20} />}
+                                 </div>
+                                 <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold text-on-surface truncate">{res.title}</p>
+                                    <p className="text-[9px] text-on-surface-variant uppercase font-black tracking-tighter">{res.type}</p>
+                                 </div>
+                                 <ExternalLink size={14} className="opacity-0 group-hover/res:opacity-100 transition-all" />
+                              </a>
+                            ))}
+                         </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-2">
+                         {module.skillsGained.map(skill => (
+                           <span key={skill} className="px-3 py-1 bg-surface-container border border-outline-variant/30 rounded-lg text-[9px] font-bold uppercase text-on-surface-variant">
+                              {skill}
+                           </span>
+                         ))}
+                      </div>
+                   </div>
+                </div>
+              ))}
+
+              {/* Capstone Project Section */}
+              <div className="bg-indigo-600 rounded-[40px] p-8 md:p-12 text-white relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:scale-125 transition-transform duration-1000" />
+                 
+                 <div className="relative z-10 space-y-8">
+                    <div className="space-y-2">
+                       <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-60">Capstone Intelligence</span>
+                       <h2 className="text-3xl md:text-4xl font-black tracking-tight">{path?.finalProject.title}</h2>
+                    </div>
+
+                    <p className="text-sm md:text-base font-medium leading-relaxed opacity-90 max-w-2xl">{path?.finalProject.description}</p>
+
+                    <div className="space-y-4 pt-4">
+                       <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">Required Deliverables</h4>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {path?.finalProject.deliverables.map((d, i) => (
+                            <div key={i} className="flex items-center gap-3 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10">
+                               <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                               <span className="text-xs font-bold">{d}</span>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+
+                    <button className="flex items-center gap-2 px-10 py-5 bg-white text-indigo-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl">
+                       Submit Project for AI Review <ArrowRight size={16} />
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+        </>
+      ) : (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           <div className="flex flex-wrap gap-2">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setCourseCategory(cat)}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${courseCategory === cat ? 'bg-indigo-500 text-white' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`}
+                >
+                  {cat}
+                </button>
+              ))}
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredCourses.map(course => (
+                <div key={course.id} className="bg-surface-container-low border border-outline-variant/30 rounded-3xl p-6 space-y-4 group hover:border-indigo-500/30 transition-all relative">
+                   <div className="flex justify-between items-start">
+                      <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                         <PlayCircle size={24} />
+                      </div>
+                      {!course.isFree && !isPro && (
+                        <div className="flex items-center gap-1 bg-amber-500/10 text-amber-500 text-[8px] font-black px-2 py-1 rounded uppercase tracking-wider border border-amber-500/20">
+                           <Lock size={10} /> Pro Only
+                        </div>
+                      )}
+                      {course.isFree && (
+                        <div className="bg-emerald-500/10 text-emerald-500 text-[8px] font-black px-2 py-1 rounded uppercase tracking-wider border border-emerald-500/20">
+                           Free access
+                        </div>
+                      )}
+                   </div>
+
+                   <div className="space-y-1">
+                      <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{course.category}</p>
+                      <h4 className="text-sm font-black text-on-surface group-hover:text-indigo-400 transition-colors line-clamp-2">{course.title}</h4>
+                   </div>
+
+                   <div className="flex items-center justify-between text-on-surface-variant">
+                      <div className="flex items-center gap-1">
+                         <BookOpen size={12} />
+                         <span className="text-[10px] font-bold">{course.level}</span>
+                      </div>
+                      <span className="text-[10px] font-medium opacity-60">Curated from {course.provider}</span>
+                   </div>
+
+                   {(!course.isFree && !isPro) ? (
+                     <button className="w-full py-3 bg-surface-container-highest text-on-surface-variant rounded-xl font-black text-[10px] uppercase tracking-widest border border-outline-variant cursor-not-allowed">
+                        Locked (Upgrade to Pro)
+                     </button>
+                   ) : (
+                     <a 
+                        href={course.link} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="w-full py-3 bg-indigo-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all text-center block"
+                     >
+                        Enter Classroom <ArrowRight size={12} className="inline ml-1" />
+                     </a>
+                   )}
+                </div>
+              ))}
+           </div>
+
+           {!isPro && (
+             <div className="bg-indigo-600 rounded-[40px] p-8 md:p-12 text-white relative overflow-hidden text-center">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+                <div className="relative z-10 space-y-4">
+                   <h3 className="text-2xl font-black tracking-tight">Unlock Expert-Curated Engineering Library</h3>
+                   <p className="text-sm font-medium opacity-80 max-w-xl mx-auto">Get full access to premium courses across all engineering branches, with deep-dive technical content curated from world-class institutions.</p>
+                   <div className="flex justify-center gap-4 pt-4">
+                      <button className="px-8 py-4 bg-white text-indigo-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-all shadow-2xl">
+                         Upgrade to Premium
+                      </button>
+                   </div>
+                </div>
+             </div>
+           )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,105 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, XCircle, ChevronRight, RotateCcw, Home } from 'lucide-react';
+import { CheckCircle2, XCircle, ChevronRight, RotateCcw, Home, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-interface Question {
-  id: number;
-  type: 'aptitude' | 'coding';
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  explanation: string;
-}
-
-const QUESTIONS: Question[] = [
-  {
-    id: 1,
-    type: 'aptitude',
-    question: "A train 120m long passes a pole in 6 seconds. What is the speed of the train in km/hr?",
-    options: ["60 km/hr", "72 km/hr", "80 km/hr", "90 km/hr"],
-    correctAnswer: 1,
-    explanation: "Speed = Distance / Time = 120 / 6 = 20 m/s. To convert to km/hr, multiply by 18/5: 20 * (18/5) = 72 km/hr."
-  },
-  {
-    id: 2,
-    type: 'coding',
-    question: "Which data structure is best suited for implementing a FIFO (First-In, First-Out) behavior?",
-    options: ["Stack", "Array", "Queue", "Binary Tree"],
-    correctAnswer: 2,
-    explanation: "A Queue follows the FIFO principle, where the first element added is the first one to be removed."
-  },
-  {
-    id: 3,
-    type: 'aptitude',
-    question: "The average of 5 numbers is 20. If one number is excluded, the average becomes 18. What is the excluded number?",
-    options: ["24", "26", "28", "30"],
-    correctAnswer: 2,
-    explanation: "Sum of 5 numbers = 5 * 20 = 100. Sum of 4 numbers = 4 * 18 = 72. Excluded number = 100 - 72 = 28."
-  },
-  {
-    id: 4,
-    type: 'coding',
-    question: "What is the time complexity of searching for an element in a balanced Binary Search Tree (BST)?",
-    options: ["O(1)", "O(n)", "O(log n)", "O(n log n)"],
-    correctAnswer: 2,
-    explanation: "In a balanced BST, each comparison halves the search space, leading to a logarithmic time complexity."
-  },
-  {
-    id: 5,
-    type: 'aptitude',
-    question: "If 15% of a number is 45, what is 40% of that number?",
-    options: ["100", "120", "150", "180"],
-    correctAnswer: 1,
-    explanation: "Let the number be x. 0.15x = 45 => x = 45 / 0.15 = 300. 40% of 300 = 0.40 * 300 = 120."
-  },
-  {
-    id: 6,
-    type: 'coding',
-    question: "What does HTML stand for?",
-    options: ["Hyper Transfer Markup Language", "Hyper Text Markup Language", "High Tech Multi Language", "Hyperlink Text Management Logic"],
-    correctAnswer: 1,
-    explanation: "HTML stands for Hyper Text Markup Language, the standard markup language for creating web pages."
-  },
-  {
-    id: 7,
-    type: 'aptitude',
-    question: "A shopkeeper sells an item for $240 at a profit of 20%. What was the cost price of the item?",
-    options: ["$180", "$200", "$210", "$220"],
-    correctAnswer: 1,
-    explanation: "Selling Price (SP) = CP * (1 + Profit%). 240 = CP * 1.2 => CP = 240 / 1.2 = 200."
-  },
-  {
-    id: 8,
-    type: 'coding',
-    question: "Which of the following is NOT a JavaScript framework/library?",
-    options: ["React", "Angular", "Django", "Vue"],
-    correctAnswer: 2,
-    explanation: "Django is a high-level Python web framework, whereas React, Angular, and Vue are JavaScript-based."
-  },
-  {
-    id: 9,
-    type: 'aptitude',
-    question: "Complete the series: 2, 6, 12, 20, 30, ?",
-    options: ["40", "42", "44", "46"],
-    correctAnswer: 1,
-    explanation: "The differences are consecutive even numbers: 4, 6, 8, 10. The next difference is 12. 30 + 12 = 42."
-  },
-  {
-    id: 10,
-    type: 'coding',
-    question: "In CSS, which property is used to change the background color?",
-    options: ["color", "bgcolor", "background-color", "canvas-color"],
-    correctAnswer: 2,
-    explanation: "The 'background-color' property in CSS is used to set the background color of an element."
-  }
-];
+import { updateXp } from '../lib/firebase';
+import { questionsService, Question } from '../services/questionsService';
 
 export default function QuickPrepAssessment({ isModal = false, onClose }: { isModal?: boolean, onClose?: () => void }) {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<(number | null)[]>(new Array(QUESTIONS.length).fill(null));
+  const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [showResult, setShowResult] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function loadQuestions() {
+      try {
+        // Attempt to seed if empty (silent background)
+        questionsService.seedQuestions().catch(console.error);
+        
+        const data = await questionsService.getQuestions(20);
+        setQuestions(data);
+        setAnswers(new Array(data.length).fill(null));
+      } catch (error) {
+        console.error('Loader failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadQuestions();
+  }, []);
 
   const handleOptionClick = (optionIndex: number) => {
     if (answers[currentStep] !== null) return;
@@ -109,7 +39,7 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
   };
 
   const nextQuestion = () => {
-    if (currentStep < QUESTIONS.length - 1) {
+    if (currentStep < questions.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       setShowResult(true);
@@ -117,14 +47,36 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
   };
 
   const score = answers.reduce((acc, ans, idx) => {
-    return ans === QUESTIONS[idx].correctAnswer ? acc + 1 : acc;
+    return ans === questions[idx].correctAnswer ? acc + 1 : acc;
   }, 0);
 
-  const reset = () => {
+  const reset = async () => {
+    setLoading(true);
+    const data = await questionsService.getQuestions(20);
+    setQuestions(data);
     setCurrentStep(0);
-    setAnswers(new Array(QUESTIONS.length).fill(null));
+    setAnswers(new Array(data.length).fill(null));
     setShowResult(false);
+    setLoading(false);
   };
+
+  useEffect(() => {
+    if (showResult && score > 0) {
+      const xp = score * 20;
+      updateXp(xp, score);
+    }
+  }, [showResult, score]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12 w-full min-h-[400px]">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+          <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Generating Fresh Questions...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (showResult) {
     return (
@@ -132,7 +84,7 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-center"
+          className="text-center w-full"
         >
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8 text-primary" />
@@ -140,26 +92,26 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
           <h2 className="text-2xl font-bold mb-1">Assessment Complete!</h2>
           <p className="text-on-surface-variant text-sm mb-6">You've finished the quick technical and aptitude check.</p>
           
-          <div className="bg-surface-container p-4 rounded-xl border border-outline-variant mb-6 w-full">
+          <div className="bg-surface-container p-4 rounded-xl border border-outline mb-6 w-full shadow-sm">
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Final Score</p>
             <div className="text-4xl font-black text-primary mb-1">
-              {score} / {QUESTIONS.length}
+              {score} / {questions.length}
             </div>
             <div className="text-xs font-medium text-on-surface">
-              {Math.round((score / QUESTIONS.length) * 100)}% Accuracy
+              {Math.round((score / (questions.length || 1)) * 100)}% Accuracy
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full">
             <button 
               onClick={reset}
-              className="flex-1 bg-surface-container-high border border-outline-variant py-3 rounded-lg font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-surface-container-highest transition-all"
+              className="flex-1 bg-surface-container-high border border-outline py-3 rounded-lg font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-surface-container-highest transition-all"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Try Again
             </button>
             <button 
               onClick={onClose || (() => navigate('/'))}
-              className="flex-1 bg-primary text-on-primary py-3 rounded-lg font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:brightness-110 transition-all"
+              className="flex-1 bg-primary text-white py-3 rounded-lg font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:brightness-110 transition-all font-black"
             >
               <Home className="w-3.5 h-3.5" /> Dashboard
             </button>
@@ -169,9 +121,9 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
     );
   }
 
-  const q = QUESTIONS[currentStep];
+  const q = questions[currentStep];
+  if (!q) return null;
   const isCorrect = answers[currentStep] === q.correctAnswer;
-  const isWrong = answers[currentStep] !== null && !isCorrect;
 
   return (
     <div className={`bg-surface ${isModal ? 'p-6 rounded-2xl w-full max-w-lg' : 'min-h-screen p-6'}`}>
@@ -179,7 +131,7 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
         <div className="flex justify-between items-center mb-6">
           <div>
             <span className="bg-primary/10 text-primary px-3 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider mb-1 inline-block">
-              Question {currentStep + 1} of {QUESTIONS.length}
+              Question {currentStep + 1} of {questions.length}
             </span>
             <h1 className="text-lg font-bold capitalize">{q.type} Assessment</h1>
           </div>
@@ -195,7 +147,7 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
           <motion.div 
             className="h-full bg-primary"
             initial={{ width: 0 }}
-            animate={{ width: `${((currentStep + 1) / QUESTIONS.length) * 100}%` }}
+            animate={{ width: `${((currentStep + 1) / (questions.length || 1)) * 100}%` }}
           />
         </div>
 
@@ -218,14 +170,14 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
                   const isAnswerCorrect = q.correctAnswer === idx;
                   
                   let bgColor = 'bg-surface-container hover:bg-surface-container-high transition-colors';
-                  let borderColor = 'border-outline-variant';
+                  let borderColor = 'border-outline';
                   
                   if (isSelected) {
                     if (isAnswerCorrect) {
-                      bgColor = 'bg-emerald-500/10 border-emerald-500';
+                      bgColor = 'bg-emerald-500/10';
                       borderColor = 'border-emerald-500';
                     } else {
-                      bgColor = 'bg-red-500/10 border-red-500';
+                      bgColor = 'bg-red-500/10';
                       borderColor = 'border-red-500';
                     }
                   } else if (answers[currentStep] !== null && isAnswerCorrect) {
@@ -250,7 +202,7 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`p-3 rounded-lg ${isCorrect ? 'bg-emerald-500/5' : 'bg-amber-500/5'} border border-outline-variant mt-4`}
+                  className={`p-3 rounded-lg ${isCorrect ? 'bg-emerald-500/5' : 'bg-amber-500/5'} border border-outline mt-4 shadow-sm`}
                 >
                   <p className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Explanation</p>
                   <p className="text-xs text-on-surface-variant">{q.explanation}</p>
@@ -267,10 +219,10 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
             className={`px-6 py-2 rounded-full font-bold uppercase tracking-widest text-[10px] flex items-center gap-2 transition-all ${
               answers[currentStep] === null 
                 ? 'bg-surface-container-highest text-on-surface-variant cursor-not-allowed opacity-50' 
-                : 'bg-primary text-on-primary hover:brightness-110'
+                : 'bg-primary text-white hover:brightness-110 font-black'
             }`}
           >
-            {currentStep === QUESTIONS.length - 1 ? 'Finish' : 'Next'}
+            {currentStep === questions.length - 1 ? 'Finish' : 'Next'}
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -278,3 +230,4 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
     </div>
   );
 }
+

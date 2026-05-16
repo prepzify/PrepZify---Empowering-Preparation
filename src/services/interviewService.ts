@@ -1,10 +1,8 @@
-import { GoogleGenAI } from "@google/genai";
 import { InterviewFeedback, InterviewMessage } from "../types";
+import { generateContent, models } from "./geminiService";
 
 export async function analyzeInterview(transcript: InterviewMessage[]): Promise<InterviewFeedback> {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
-  const prompt = `As "EliteInterviewer AI," you have just finished a BTech placement mock interview. 
+  const prompt = `As "Olivia," a senior technical interviewer, you have just finished a BTech placement mock interview. 
   Analyze the following transcript and provide a detailed performance report.
   
   Transcript:
@@ -29,15 +27,12 @@ export async function analyzeInterview(transcript: InterviewMessage[]): Promise<
   }`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json"
-      }
+    const text = await generateContent({
+      prompt,
+      model: models.flash,
+      responseMimeType: "application/json"
     });
 
-    const text = response.text;
     if (!text) throw new Error("No response text from Gemini");
     return JSON.parse(text);
   } catch (error) {

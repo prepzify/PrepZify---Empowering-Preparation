@@ -9,6 +9,8 @@
         "totalSessions": { "type": "number" },
         "averageScore": { "type": "number" },
         "streak": { "type": "number" },
+        "xp": { "type": "number" },
+        "questionsSolved": { "type": "number" },
         "lastActive": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "totalSessions"]
@@ -47,9 +49,93 @@
         }
       },
       "required": ["sessionId", "role", "content", "timestamp"]
+    },
+    "ResumeAnalysis": {
+      "title": "Resume Analysis",
+      "description": "Result of a resume audit",
+      "type": "object",
+      "properties": {
+        "resumeText": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "jobDescription": { "type": "string" },
+        "feedback": { "type": "object" },
+        "matchingJobs": { "type": "array" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["resumeText", "timestamp"]
+    },
+    "StudyPath": {
+      "title": "Study Path",
+      "description": "A curated learning path",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "estimatedTime": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced"] },
+        "modules": { "type": "array" },
+        "finalProject": { "type": "object" },
+        "completedTasks": { "type": "array" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "modules", "timestamp"]
+    },
+    "AppliedJob": {
+      "title": "Applied Job",
+      "description": "Tracking applied jobs",
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "company": { "type": "string" },
+        "status": { "type": "string" },
+        "appliedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["jobId", "appliedAt"]
+    },
+    "LiveExpertBooking": {
+      "title": "Live Expert Booking",
+      "description": "A scheduled session with a human expert",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "domain": { "type": "string" },
+        "jobDetails": { "type": "string" },
+        "scheduledAt": { "type": "string", "format": "date-time" },
+        "preferredContact": { "type": "string", "enum": ["whatsapp", "insite"] },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "userName", "phoneNumber", "scheduledAt", "preferredContact", "timestamp"]
+    },
+    "AssessmentQuestion": {
+      "title": "Assessment Question",
+      "description": "A question for quick prep assessment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["aptitude", "coding"] },
+        "question": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "correctAnswer": { "type": "number" },
+        "explanation": { "type": "string" }
+      },
+      "required": ["type", "question", "options", "correctAnswer", "explanation"]
     }
   },
   "firestore": {
+    "questions/{questionId}": {
+      "schema": "AssessmentQuestion",
+      "description": "Library of assessment questions"
+    },
+    "users/{userId}/expertBookings/{bookingId}": {
+      "schema": "LiveExpertBooking",
+      "description": "Scheduled live expert sessions for a user"
+    },
     "users/{userId}": {
       "schema": "UserStats",
       "description": "User profile and statistics"
@@ -61,6 +147,18 @@
     "interviews/{interviewId}/messages/{messageId}": {
       "schema": "Message",
       "description": "Messages within an interview session"
+    },
+    "users/{userId}/resumes/{resumeId}": {
+      "schema": "ResumeAnalysis",
+      "description": "History of resume audits"
+    },
+    "users/{userId}/studyPaths/{pathId}": {
+      "schema": "StudyPath",
+      "description": "Generated learning paths"
+    },
+    "users/{userId}/appliedJobs/{jobId}": {
+      "schema": "AppliedJob",
+      "description": "Jobs user has shown interest in"
     }
   }
 }

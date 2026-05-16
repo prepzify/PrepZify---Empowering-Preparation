@@ -143,6 +143,85 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      
+      {/* Pricing/Premium Section */}
+      <section id="pricing" className="py-32 px-6 md:px-12 relative overflow-hidden">
+        <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
+        
+        <div className="max-w-7xl mx-auto space-y-20">
+          <header className="text-center space-y-4 max-w-2xl mx-auto">
+            <h3 className="text-sm font-black uppercase tracking-[0.3em] text-primary">Simple Pricing</h3>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Invest in your <span className="text-primary italic">career</span> today</h2>
+            <p className="text-on-surface-variant font-medium">Choose the plan that fits your current goals. Upgrade or downgrade anytime.</p>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Free Plan */}
+            <div className="bg-surface-container border border-outline-variant p-10 rounded-[48px] space-y-8 flex flex-col">
+               <div className="space-y-2">
+                  <h4 className="text-2xl font-black">Free Tier</h4>
+                  <p className="text-on-surface-variant text-sm font-medium">Perfect for exploring the platform.</p>
+               </div>
+               
+               <div className="flex items-baseline gap-1">
+                  <span className="text-5xl font-black">₹0</span>
+                  <span className="text-on-surface-variant font-bold text-sm">/month</span>
+               </div>
+
+               <ul className="space-y-4 flex-1">
+                  {[
+                    '3 AI Mock Sessions / Month',
+                    'Basic Resume Scoring',
+                    '2 Practice Path Curations',
+                    'Access to Community Board'
+                  ].map(item => (
+                    <li key={item} className="flex items-center gap-3 text-xs font-bold text-on-surface-variant">
+                       <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {item}
+                    </li>
+                  ))}
+               </ul>
+
+               <Link to="/auth" className="w-full py-5 rounded-2xl border border-outline-variant text-[11px] font-black uppercase tracking-widest hover:bg-surface-container-high transition-all text-center">
+                  Get Started for Free
+               </Link>
+            </div>
+
+            {/* Premium Plan */}
+            <div className="bg-[#0f0f12] border border-primary/30 p-10 rounded-[48px] space-y-8 flex flex-col relative ring-4 ring-primary/20">
+               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-on-primary px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest">Most Popular</div>
+               
+               <div className="space-y-2">
+                  <h4 className="text-2xl font-black text-white">Infinite Access</h4>
+                  <p className="text-white/40 text-sm font-medium">Everything you need to land elite roles.</p>
+               </div>
+               
+               <div className="flex items-baseline gap-1">
+                  <span className="text-5xl font-black text-white">₹1,499</span>
+                  <span className="text-white/40 font-bold text-sm">/month</span>
+               </div>
+
+               <ul className="space-y-4 flex-1">
+                  {[
+                    'Unlimited AI Mock Interviews',
+                    'Advanced PII & Security Audits',
+                    'Full Expert Course Library',
+                    'Behavioral & Tone Analysis',
+                    'ATS Keyword Masterclass',
+                    'Priority Technical Support'
+                  ].map(item => (
+                    <li key={item} className="flex items-center gap-3 text-xs font-bold text-white/80">
+                       <Zap className="w-4 h-4 text-primary" /> {item}
+                    </li>
+                  ))}
+               </ul>
+
+               <Link to="/auth?plan=premium" className="w-full py-5 bg-primary text-on-primary rounded-2xl text-[11px] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all text-center shadow-2xl shadow-primary/30">
+                  Upgrade to Infinite Access
+               </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section className="py-32 px-6 md:px-12">

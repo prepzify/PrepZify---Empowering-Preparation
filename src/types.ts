@@ -75,3 +75,14 @@ export interface InterviewMessage {
   chunk: string;
   timestamp: number;
 }
+
+export interface InterviewSession {
+  id: string;
+  userId: string;
+  mode: 'audio' | 'video';
+  role: string;
+  startTime: number;
+  endTime?: number;
+  status: 'active' | 'completed';
+  feedback?: InterviewFeedback;
+}

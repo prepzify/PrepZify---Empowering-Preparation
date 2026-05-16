@@ -3,6 +3,8 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -65,21 +67,54 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
-export async function signIn() {
+let isSigningIn = false;
+
+export async function handleRedirectResult() {
   try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      await ensureUserStats(result.user);
+      return result.user;
+    }
+  } catch (error) {
+    console.error("Redirect Auth Error:", error);
+  }
+  return null;
+}
+
+export async function signIn(useRedirect = false) {
+  if (isSigningIn) return;
+  isSigningIn = true;
+  try {
+    if (useRedirect) {
+      await signInWithRedirect(auth, googleProvider);
+      return; 
+    }
     const result = await signInWithPopup(auth, googleProvider);
     // Ensure user record exists
     await ensureUserStats(result.user);
     return result.user;
   } catch (error: any) {
     console.error("Authentication Error:", error);
-    if (error?.code === 'auth/popup-blocked') {
-      throw new Error('Sign-in popup was blocked by your browser. Please allow popups for this site.');
+    const isPopupBlocked = error?.code === 'auth/popup-blocked' || 
+                          error?.message?.includes('popup-blocked') ||
+                          error?.code === 'auth/cancelled-popup-request';
+
+    if (isPopupBlocked) {
+      throw new Error('SIGN_IN_POPUP_BLOCKED');
     }
+    
     if (error?.code === 'auth/unauthorized-domain') {
       throw new Error('This domain is not authorized for Google Sign-In. Please check your Firebase project settings.');
     }
+    
+    if (error?.message?.includes('Pending promise')) {
+      // Ignore these internal/redundant errors
+      return;
+    }
     throw error;
+  } finally {
+    isSigningIn = false;
   }
 }
 
@@ -93,6 +128,8 @@ export async function ensureUserStats(user: User) {
         totalSessions: 0,
         averageScore: 0,
         streak: 0,
+        xp: 0,
+        questionsSolved: 0,
         lastActive: serverTimestamp()
       });
     }
@@ -103,31 +140,11 @@ export async function ensureUserStats(user: User) {
 
 export const signOut = () => firebaseSignOut(auth);
 
-export async function updateXp(points: number) {
+export async function updateXp(points: number, solveCount: number = 0) {
+  // Re-exporting from dbService logic or keeping it here as a wrapper
   if (!auth.currentUser) return;
-  const userDocRef = doc(db, 'users', auth.currentUser.uid);
-  try {
-    const userDoc = await getDoc(userDocRef);
-    if (userDoc.exists()) {
-      const data = userDoc.data();
-      await updateDoc(userDocRef, {
-        xp: (data.xp || 0) + points,
-        totalSessions: (data.totalSessions || 0) + 1,
-        lastActive: serverTimestamp()
-      });
-    } else {
-      await setDoc(userDocRef, {
-        userId: auth.currentUser.uid,
-        xp: points,
-        totalSessions: 1,
-        averageScore: 0,
-        streak: 1,
-        lastActive: serverTimestamp()
-      });
-    }
-  } catch (error) {
-    console.error("Failed to update XP:", error);
-  }
+  const { dbService } = await import('../services/dbService');
+  return dbService.incrementStats(auth.currentUser.uid, points, solveCount);
 }
 
 export const signUpWithEmail = (email: string, pass: string) => createUserWithEmailAndPassword(auth, email, pass);
