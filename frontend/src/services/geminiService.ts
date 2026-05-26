@@ -138,6 +138,78 @@ export async function generateQuestionHint(questionTitle: string, questionConten
   });
 }
 
+export async function generateTailoredResume(
+  originalResume: string,
+  company: string,
+  role: string,
+  jobDescription: string = ''
+) {
+  return generateContent({
+    prompt: `You are an elite resume strategist and career coach. Your task is to take the following original resume and completely rewrite and tailor it for a specific company and role.
+
+ORIGINAL RESUME:
+${originalResume}
+
+TARGET COMPANY: ${company}
+TARGET ROLE: ${role}
+JOB DESCRIPTION: ${jobDescription || 'Not provided — use your knowledge of typical requirements for this role at ' + company}
+
+INSTRUCTIONS:
+1. Rewrite the professional summary to directly address ${company}'s culture, mission, and values.
+2. Reorder and rewrite bullet points in experience to highlight skills most relevant to ${role} at ${company}.
+3. Use strong action verbs and quantify achievements where possible (make reasonable inferences if numbers aren't present).
+4. Add or emphasize skills that are specifically valued at ${company} (e.g., for Google: scalability, Kubernetes, Python; for fintech: security, compliance, Go).
+5. Suggest projects that would impress ${company} specifically.
+6. Keep the person's actual experience — do NOT fabricate companies or degrees they haven't worked at/attended.
+7. Write an insight explaining WHY this resume is tailored for ${company}.
+
+Return ONLY a valid JSON object with this exact structure:
+{
+  "name": "string",
+  "email": "string",
+  "phone": "string",
+  "linkedin": "string",
+  "github": "string",
+  "location": "string",
+  "summary": "string (3-4 impactful sentences tailored to ${company})",
+  "skills": [
+    { "category": "string", "items": ["string"] }
+  ],
+  "experience": [
+    {
+      "company": "string",
+      "role": "string",
+      "duration": "string",
+      "location": "string",
+      "bullets": ["string (strong action verb + quantified impact)"]
+    }
+  ],
+  "education": [
+    {
+      "institution": "string",
+      "degree": "string",
+      "year": "string",
+      "cgpa": "string (optional)"
+    }
+  ],
+  "projects": [
+    {
+      "name": "string",
+      "tech": "string",
+      "description": "string",
+      "bullets": ["string"],
+      "link": "string (optional)"
+    }
+  ],
+  "achievements": ["string"],
+  "certifications": ["string"],
+  "companyInsight": "string (2-3 sentences on why this resume is now ideal for ${company})"
+}`,
+    responseMimeType: 'application/json',
+    model: models.flash
+  });
+}
+
 export async function extractTextFromImage(file: File) {
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -170,4 +242,74 @@ export async function extractTextFromImage(file: File) {
     console.error("Gemini API Error (extractTextFromImage):", error);
     throw error;
   }
+}
+
+export async function generateCampusPlan(
+  company: string,
+  daysLeft: number,
+  resumeText: string,
+  role: string = 'Software Engineer'
+) {
+  return generateContent({
+    prompt: `You are an elite campus placement strategist. Create a hyper-personalised, day-by-day study plan for a student preparing for ${company} campus recruitment in exactly ${daysLeft} days.
+
+STUDENT RESUME / BACKGROUND:
+${resumeText || 'No resume provided — assume a typical 3rd/4th year engineering student with basic DSA knowledge.'}
+
+TARGET COMPANY: ${company}
+TARGET ROLE: ${role}
+DAYS AVAILABLE: ${daysLeft}
+
+COMPANY RECRUITMENT PATTERNS (use this knowledge):
+- TCS: NQT (Numerical, Verbal, Reasoning, Programming Logic, Coding). Focus: aptitude then coding.
+- Infosys: InfyTQ / SP track. Focus: Coding (Python/Java), OOP, Puzzles.
+- Wipro: NLTH (Aptitude, Written Comm, Coding). Focus: Aptitude, Communication, Basic DSA.
+- Amazon: Online Assessment (2 coding + work sim). Focus: Medium-Hard DSA, Behavioral.
+- Microsoft: Coding + System Design. Focus: DSA LeetCode Medium-Hard, System Design basics.
+- Google: Multiple coding + System Design. Focus: Hard DSA, Graphs, DP, System Design.
+- Goldman Sachs: Quant aptitude + Coding. Focus: Quantitative aptitude, DSA, Finance basics.
+- Deloitte: Verbal + Aptitude + Coding + Case. Focus: Communication, Logical reasoning.
+- Accenture: Cognitive + Coding. Focus: Aptitude, Basic coding.
+- For unknown companies: balanced plan covering DSA, aptitude, communication, HR.
+
+PLAN REQUIREMENTS:
+1. Divide ${daysLeft} days into phases (Foundation → Core Practice → Mock Tests → Final Sprint).
+2. Each day: clear focus, specific topics, practice targets, and a practical tip.
+3. Identify skill gaps from resume and emphasise those days.
+4. Include a "Day 0 checklist" (things to do today before the plan starts).
+5. Final 2 days must be: revision + full mock test + HR prep.
+6. Be realistic — students have college commitments too.
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "company": "string",
+  "role": "string",
+  "daysLeft": number,
+  "companyPattern": "string",
+  "keyFocusAreas": ["string"],
+  "skillGapsDetected": ["string"],
+  "phases": [
+    { "name": "string", "duration": "string", "goal": "string", "color": "string (blue|green|orange|purple|red)" }
+  ],
+  "days": [
+    {
+      "day": number,
+      "phase": "string",
+      "title": "string",
+      "focus": "string",
+      "priority": "high | medium | low",
+      "tasks": [
+        { "type": "theory | practice | mock | revision | hr", "description": "string", "target": "string" }
+      ],
+      "tip": "string",
+      "estimatedHours": number
+    }
+  ],
+  "day0Checklist": ["string"],
+  "finalWeekStrategy": "string",
+  "motivationalNote": "string"
+}`,
+    responseMimeType: 'application/json',
+    model: models.flash
+  });
 }

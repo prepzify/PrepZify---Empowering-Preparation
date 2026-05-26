@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
   ShieldCheck, 
@@ -9,11 +9,47 @@ import {
   ArrowRight, 
   CheckCircle2,
   Trophy,
-  Users
+  Users,
+  CreditCard,
+  AlertCircle
 } from 'lucide-react';
+import { useState } from 'react';
+import { auth } from '../lib/firebase';
+import { PRICING_PLANS, PricingPlan, startRazorpayPayment } from '../services/paymentService';
 import Logo from './Logo';
 
 export default function LandingPage() {
+  const navigate = useNavigate();
+  const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
+  const [paymentMessage, setPaymentMessage] = useState('');
+  const [paymentError, setPaymentError] = useState('');
+
+  const handlePlanClick = async (plan: PricingPlan) => {
+    setPaymentMessage('');
+    setPaymentError('');
+
+    if (plan.id === 'free') {
+      navigate('/auth');
+      return;
+    }
+
+    if (!auth.currentUser) {
+      navigate(`/auth?plan=${plan.id}`);
+      return;
+    }
+
+    setCheckoutPlan(plan.id);
+    try {
+      const payment = await startRazorpayPayment(plan);
+      setPaymentMessage(`${payment.plan.name} is active. Your subscription has been saved in Firebase.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Payment could not be completed.';
+      setPaymentError(message);
+    } finally {
+      setCheckoutPlan(null);
+    }
+  };
+
   return (
     <div className="bg-background min-h-screen text-on-surface selection:bg-primary/30">
       {/* Navigation */}
@@ -155,70 +191,84 @@ export default function LandingPage() {
             <p className="text-on-surface-variant font-medium">Choose the plan that fits your current goals. Upgrade or downgrade anytime.</p>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Free Plan */}
-            <div className="bg-surface-container border border-outline-variant p-10 rounded-[48px] space-y-8 flex flex-col">
-               <div className="space-y-2">
-                  <h4 className="text-2xl font-black">Free Tier</h4>
-                  <p className="text-on-surface-variant text-sm font-medium">Perfect for exploring the platform.</p>
-               </div>
-               
-               <div className="flex items-baseline gap-1">
-                  <span className="text-5xl font-black">₹0</span>
-                  <span className="text-on-surface-variant font-bold text-sm">/month</span>
-               </div>
+          {(paymentMessage || paymentError) && (
+            <div className={`max-w-3xl mx-auto border p-4 rounded-2xl flex items-center gap-3 text-sm font-bold ${
+              paymentError
+                ? 'bg-error-container/10 border-error/20 text-error'
+                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+            }`}>
+              {paymentError ? <AlertCircle className="w-5 h-5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 shrink-0" />}
+              <span>{paymentError || paymentMessage}</span>
+            </div>
+          )}
 
-               <ul className="space-y-4 flex-1">
-                  {[
-                    '3 AI Mock Sessions / Month',
-                    'Basic Resume Scoring',
-                    '2 Practice Path Curations',
-                    'Access to Community Board'
-                  ].map(item => (
-                    <li key={item} className="flex items-center gap-3 text-xs font-bold text-on-surface-variant">
-                       <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {item}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {PRICING_PLANS.map((plan) => (
+              <div
+                key={plan.id}
+                className={`border p-7 rounded-[28px] space-y-7 flex flex-col min-h-[520px] ${
+                  plan.accent
+                    ? 'bg-[#ff9800] border-[#ff9800] text-white shadow-2xl shadow-primary/25'
+                    : 'bg-surface-container border-outline-variant'
+                }`}
+              >
+                <div className="space-y-2">
+                  <h4 className={`text-xl font-black ${plan.accent ? 'text-white' : 'text-on-surface'}`}>
+                    {plan.name}
+                  </h4>
+                  <p className={`text-sm font-medium min-h-10 ${plan.accent ? 'text-white/80' : 'text-on-surface-variant'}`}>
+                    {plan.description}
+                  </p>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-4xl font-black tracking-tighter ${plan.accent ? 'text-white' : 'text-on-surface'}`}>
+                    {plan.priceLabel}
+                  </span>
+                  <span className={`font-bold text-sm ${plan.accent ? 'text-white/80' : 'text-on-surface-variant'}`}>
+                    {plan.period}
+                  </span>
+                </div>
+
+                <div className={`h-px ${plan.accent ? 'bg-white/60' : 'bg-outline-variant'}`} />
+
+                <ul className="space-y-3 flex-1">
+                  {plan.features.map(item => (
+                    <li
+                      key={item}
+                      className={`flex items-start gap-3 text-xs font-bold leading-relaxed ${
+                        plan.accent ? 'text-white/90' : 'text-on-surface-variant'
+                      }`}
+                    >
+                      <CheckCircle2 className={`w-4 h-4 mt-0.5 shrink-0 ${plan.accent ? 'text-white' : 'text-primary'}`} />
+                      <span>{item}</span>
                     </li>
                   ))}
-               </ul>
+                </ul>
 
-               <Link to="/auth" className="w-full py-5 rounded-2xl border border-outline-variant text-[11px] font-black uppercase tracking-widest hover:bg-surface-container-high transition-all text-center">
-                  Get Started for Free
-               </Link>
-            </div>
-
-            {/* Premium Plan */}
-            <div className="bg-[#0f0f12] border border-primary/30 p-10 rounded-[48px] space-y-8 flex flex-col relative ring-4 ring-primary/20">
-               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-on-primary px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest">Most Popular</div>
-               
-               <div className="space-y-2">
-                  <h4 className="text-2xl font-black text-white">Infinite Access</h4>
-                  <p className="text-white/40 text-sm font-medium">Everything you need to land elite roles.</p>
-               </div>
-               
-               <div className="flex items-baseline gap-1">
-                  <span className="text-5xl font-black text-white">₹1,499</span>
-                  <span className="text-white/40 font-bold text-sm">/month</span>
-               </div>
-
-               <ul className="space-y-4 flex-1">
-                  {[
-                    'Unlimited AI Mock Interviews',
-                    'Advanced PII & Security Audits',
-                    'Full Expert Course Library',
-                    'Behavioral & Tone Analysis',
-                    'ATS Keyword Masterclass',
-                    'Priority Technical Support'
-                  ].map(item => (
-                    <li key={item} className="flex items-center gap-3 text-xs font-bold text-white/80">
-                       <Zap className="w-4 h-4 text-primary" /> {item}
-                    </li>
-                  ))}
-               </ul>
-
-               <Link to="/auth?plan=premium" className="w-full py-5 bg-primary text-on-primary rounded-2xl text-[11px] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all text-center shadow-2xl shadow-primary/30">
-                  Upgrade to Infinite Access
-               </Link>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => handlePlanClick(plan)}
+                  disabled={checkoutPlan === plan.id}
+                  className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${
+                    plan.accent
+                      ? 'bg-white text-[#ff9800] hover:brightness-95'
+                      : plan.id === 'free'
+                        ? 'border border-outline-variant hover:bg-surface-container-high'
+                        : 'bg-primary text-on-primary hover:brightness-110 shadow-xl shadow-primary/20'
+                  }`}
+                >
+                  {plan.id === 'free' ? (
+                    'Get Started'
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4" />
+                      {checkoutPlan === plan.id ? 'Opening Checkout...' : `Buy ${plan.name}`}
+                    </>
+                  )}
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -290,7 +340,13 @@ export default function LandingPage() {
             <div className="space-y-4">
               <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Community</h4>
               <ul className="space-y-2 text-sm text-on-surface-variant">
-                <li><a href="#" className="hover:text-on-surface">Discord</a></li>
+                <li>
+                  <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-on-surface flex items-center gap-1.5 group">
+                    Discord
+                    <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider scale-90 transition-transform">Soon</span>
+                  </a>
+                </li>
+                <li><a href="https://t.me/prepzify" target="_blank" rel="noopener noreferrer" className="hover:text-on-surface">Telegram</a></li>
                 <li><a href="#" className="hover:text-on-surface">Twitter</a></li>
                 <li><a href="#" className="hover:text-on-surface">LinkedIn</a></li>
               </ul>

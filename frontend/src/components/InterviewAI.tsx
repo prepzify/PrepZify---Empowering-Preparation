@@ -19,6 +19,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useSubscription } from '../context/SubscriptionContext';
 
 interface Message {
   role: 'ai' | 'user';
@@ -33,6 +34,7 @@ type Mode = 'video' | 'audio';
 
 export default function InterviewAI() {
   const navigate = useNavigate();
+  const { checkLimit, incrementUsage, triggerUpgrade } = useSubscription();
   const [messages, setMessages] = useState<Message[]>([]);
   const [userInput, setUserInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -50,7 +52,20 @@ export default function InterviewAI() {
   const chatSessionRef = useRef<any>(null);
 
   const startInterview = async () => {
-    setIsStarted(true);
+    const check = checkLimit('interview');
+    if (!check.allowed) {
+      triggerUpgrade(`You have completed your weekly limit of ${check.limit} free mock interview(s). Upgrade to a premium plan to unlock more assessments!`);
+      return;
+    }
+
+    try {
+      await incrementUsage('interview');
+      setIsStarted(true);
+    } catch (e) {
+      console.error("Failed to track interview usage:", e);
+      // fallback so user doesn't get fully blocked if Firebase has a transient error
+      setIsStarted(true);
+    }
   };
 
   const endSession = () => {

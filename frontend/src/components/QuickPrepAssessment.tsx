@@ -46,7 +46,7 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
     }
   };
 
-  const score = answers.reduce((acc, ans, idx) => {
+  const score = answers.reduce<number>((acc, ans, idx) => {
     return ans === questions[idx].correctAnswer ? acc + 1 : acc;
   }, 0);
 
@@ -230,4 +230,3 @@ export default function QuickPrepAssessment({ isModal = false, onClose }: { isMo
     </div>
   );
 }
-

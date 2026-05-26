@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
 import Logo from './Logo';
 import { signOut } from '../lib/firebase';
+import { useSubscription } from '../context/SubscriptionContext';
 
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', path: '/' },
@@ -19,8 +20,18 @@ const menuItems = [
     ]
   },
   { id: 'code', label: 'Practice Arena', icon: 'code', path: '/code' },
+  {
+    id: 'resume_group',
+    label: 'Resume Tools',
+    icon: 'description',
+    path: '/resume',
+    children: [
+      { id: 'resume', label: 'Resume Check', icon: 'fact_check', path: '/resume' },
+      { id: 'resume-builder', label: 'Resume Builder', icon: 'auto_fix_high', path: '/resume-builder' },
+    ]
+  },
+  { id: 'campus-plan', label: 'Campus Planner', icon: 'flag', path: '/campus-plan' },
   { id: 'paths', label: 'Study Paths', icon: 'route', path: '/paths' },
-  { id: 'resume', label: 'Resume Check', icon: 'description', path: '/resume' },
 ];
 
 interface SidebarProps {
@@ -32,6 +43,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['interview_group']);
+  const { planId } = useSubscription();
 
   const toggleGroup = (id: string) => {
     setExpandedGroups(prev => 
@@ -55,21 +67,14 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="px-6 mb-10 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 group">
-            <Logo className="w-12 h-12 group-hover:scale-110 transition-transform" />
-            <div>
-              <h1 className="font-display text-2xl font-bold tracking-tighter leading-none">
-                <span className="text-[#0056b3]">Prep</span>
-                <span className="text-[#ff9800]">Zify</span>
-              </h1>
-              <p className="text-[7px] font-black uppercase tracking-[0.2em] text-[#333333] mt-1.5">Empowering Preparation</p>
-            </div>
+        <div className="px-4 mb-10 flex items-center justify-center relative w-full">
+          <Link to="/" className="flex justify-center items-center group w-full -translate-x-[10px]">
+            <Logo className="h-15 group-hover:scale-110 transition-transform" />
           </Link>
           
           <button 
             onClick={() => setIsOpen(false)}
-            className="p-2 text-on-surface-variant hover:text-on-surface"
+            className="absolute right-6 p-2 text-on-surface-variant hover:text-on-surface"
           >
             <X className="w-5 h-5" />
           </button>
@@ -160,9 +165,18 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           })}
         </nav>
 
-        <div className="mt-auto px-4 space-y-2 pt-6">
+        {/* Membership Badge Info */}
+        <div className="px-4 mb-4">
+          <div className="bg-surface-container-high/40 border border-outline-variant/30 rounded-2xl p-4 space-y-2">
+            <span className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">Membership</span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-on-surface capitalize">{planId} Tier</span>
+              <span className={`w-2.5 h-2.5 rounded-full ${planId === 'free' ? 'bg-on-surface-variant/40' : planId === 'pro' ? 'bg-primary' : planId === 'pro-plus' ? 'bg-indigo-400' : 'bg-amber-400 animate-pulse'}`} />
+            </div>
+          </div>
+        </div>
 
-          
+        <div className="px-4 space-y-2 pt-2 border-t border-outline-variant/20">
           <Link to="/settings" className="flex items-center gap-4 py-2 px-4 text-on-surface-variant hover:text-on-surface transition-colors rounded-lg">
             <span className="material-symbols-outlined shrink-0">settings</span>
             <span className="truncate">Settings</span>

@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeResume, extractTextFromImage } from '../services/geminiService';
+import { analyzeResume, extractTextFromImage, generateTailoredResume } from '../services/geminiService';
+import { exportResumeAsDocx } from '../lib/docxExport';
 import { findJobs, Job } from '../services/jobService';
 import { dbService } from '../services/dbService';
 import { auth } from '../lib/firebase';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSubscription } from '../context/SubscriptionContext';
 import { 
   FileText, 
   Upload, 
@@ -48,11 +50,14 @@ interface AnalysisResult {
 }
 
 export default function ResumeCheck() {
+  const { checkLimit, incrementUsage, triggerUpgrade } = useSubscription();
   const [resumeText, setResumeText] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isGeneratingResume, setIsGeneratingResume] = useState(false);
+  const [resumeGenToast, setResumeGenToast] = useState('');
   const [feedback, setFeedback] = useState<AnalysisResult | null>(null);
   const [matchingJobs, setMatchingJobs] = useState<Job[]>([]);
   const [activeTab, setActiveTab] = useState<'audit' | 'jobs' | 'roadmap'>('audit');
@@ -130,6 +135,25 @@ export default function ResumeCheck() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reportRef = useRef<HTMLDivElement>(null);
+
+  const handleGenerateResume = async () => {
+    if (!resumeText.trim() || !feedback) return;
+    setIsGeneratingResume(true);
+    try {
+      const raw = await generateTailoredResume(resumeText, 'General', jobTitle || 'Software Engineer', jobDescription);
+      const data = JSON.parse(raw.trim());
+      const fname = `${data.name || 'resume'}-optimized.docx`.replace(/\s+/g, '-').toLowerCase();
+      await exportResumeAsDocx(data, fname);
+      setResumeGenToast('Optimized resume downloaded!');
+      setTimeout(() => setResumeGenToast(''), 3500);
+    } catch (e) {
+      console.error('Resume generation error:', e);
+      setResumeGenToast('Failed to generate resume. Try again.');
+      setTimeout(() => setResumeGenToast(''), 3500);
+    } finally {
+      setIsGeneratingResume(false);
+    }
+  };
 
   const downloadPDF = async () => {
     if (!feedback || !reportRef.current) return;
@@ -231,6 +255,12 @@ export default function ResumeCheck() {
   const handleAnalyze = async (textToUse?: string) => {
     const text = textToUse || resumeText;
     if (!text.trim()) return;
+
+    const check = checkLimit('resume');
+    if (!check.allowed) {
+      triggerUpgrade(`You have reached your monthly limit of ${check.limit} free resume audit(s). Upgrade to a premium plan to get unlimited ATS analyses!`);
+      return;
+    }
     
     setIsAnalyzing(true);
     setFeedback(null);
@@ -244,6 +274,9 @@ export default function ResumeCheck() {
       if (user) {
         await dbService.incrementStats(user.uid, 100);
       }
+
+      // Increment monthly usage count in Firestore
+      await incrementUsage('resume');
 
       // Trigger job search based on extracted skills
       const topSkills = result.keyStrengths.slice(0, 5);
@@ -717,6 +750,17 @@ export default function ResumeCheck() {
                       >
                          <Download className="w-4 h-4" /> Download Report PDF
                       </button>
+                      <button
+                          onClick={handleGenerateResume}
+                          disabled={isGeneratingResume}
+                          className="flex items-center justify-center gap-3 w-full py-5 bg-gradient-to-r from-primary to-indigo-500 text-white text-[11px] font-black uppercase tracking-widest rounded-3xl hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-60"
+                       >
+                          {isGeneratingResume ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Building Resume...</>
+                          ) : (
+                            <><Sparkles className="w-4 h-4" /> Generate Optimized Resume (.docx)</>
+                          )}
+                       </button>
                    </div>
 
                    {/* Match Score Box */}
@@ -863,7 +907,21 @@ export default function ResumeCheck() {
               </div>
            </div>
          </div>
-      )}
+      )}\n
+      {/* Toast notification for resume generation */}
+      <AnimatePresence>
+        {resumeGenToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="fixed bottom-6 right-6 bg-surface-container-high border border-primary/30 text-on-surface px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm z-50"
+          >
+            <Sparkles className="w-5 h-5 text-primary" />
+            {resumeGenToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,0 +1,56 @@
+{
+  "name": "prepzify-frontend",
+  "version": "1.0.0",
+  "description": "Prepzify React frontend — AI-powered campus placement preparation platform",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@mediapipe/face_mesh": "^0.4.1633559619",
+    "@monaco-editor/react": "^4.7.0",
+    "@tensorflow-models/face-landmarks-detection": "^1.0.6",
+    "@tensorflow/tfjs-backend-webgl": "^4.22.0",
+    "@tensorflow/tfjs-converter": "^4.22.0",
+    "@tensorflow/tfjs-core": "^4.22.0",
+    "firebase": "^12.12.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "pdfjs-dist": "^5.7.284",
+    "prepzify": "file:..",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "react-resizable-panels": "^2.1.7",
+    "react-router-dom": "^7.15.0",
+    "recharts": "^3.8.1",
+    "recordrtc": "^5.6.2"
+  },
+  "overrides": {
+    "react-resizable-panels": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "@types/jszip": "^3.4.0",
+    "@types/node": "^22.14.0",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-router-dom": "^5.3.3",
+    "@vitejs/plugin-react": "^5.0.4",
+    "autoprefixer": "^10.4.21",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^4.1.14",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3"
+  }
+}

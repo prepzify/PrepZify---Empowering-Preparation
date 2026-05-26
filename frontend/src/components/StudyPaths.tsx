@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useSearchParams } from 'react-router-dom';
 import { generateStudyPath, StudyPath } from '../services/studyPathService';
 import { dbService } from '../services/dbService';
+import { getCookie } from '../lib/cookieUtils';
 import { auth } from '../lib/firebase';
+import { useSubscription } from '../context/SubscriptionContext';
 import { 
   BookOpen, 
   Clock, 
@@ -30,7 +32,11 @@ export default function StudyPaths() {
 
   const [activeTab, setActiveTab] = useState<'roadmaps' | 'courses'>('roadmaps');
   const [courseCategory, setCourseCategory] = useState('All');
-  const [isPro, setIsPro] = useState(false); // Mock subscription status
+  const { isPro, triggerUpgrade } = useSubscription();
+
+  const targetComp = getCookie("pz_target_company");
+  const targetRl = getCookie("pz_target_role");
+  const [showSuggestion, setShowSuggestion] = useState(() => !!(targetComp && targetRl));
 
   const EXPERT_COURSES = [
     // Computer Science
@@ -190,6 +196,41 @@ export default function StudyPaths() {
         <>
           {!path && !isGenerating ? (
         <div className="max-w-3xl mx-auto py-20 text-center space-y-8">
+           {showSuggestion && targetComp && targetRl && (
+             <div className="max-w-lg mx-auto bg-gradient-to-r from-indigo-500/15 to-purple-500/10 border border-indigo-500/20 rounded-[30px] p-6 relative overflow-hidden group shadow-xl shadow-indigo-500/5 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+               <div className="absolute -top-10 -right-10 w-24 h-24 bg-indigo-500/10 rounded-full blur-[40px]" />
+               <div className="relative z-10 space-y-4 text-left">
+                 <div className="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                   <Sparkles size={12} className="animate-pulse" /> Recommended Career Target
+                 </div>
+                 <h4 className="text-lg font-black text-on-surface leading-tight">
+                   Aiming for <span className="text-indigo-400">{targetComp}</span> as a <span className="text-indigo-400">{targetRl}</span>?
+                 </h4>
+                 <p className="text-xs text-on-surface-variant leading-relaxed">
+                   Let's generate a customized placement syllabus and step-by-step technical roadmap tailored for {targetComp}'s interview standards.
+                 </p>
+                 <div className="flex gap-2 pt-2">
+                   <button
+                     onClick={() => {
+                       const skillName = `${targetComp} ${targetRl}`;
+                       setSkill(skillName);
+                       handleGenerate(skillName);
+                       setShowSuggestion(false);
+                     }}
+                     className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-[0.98] transition-all cursor-pointer shadow-lg shadow-indigo-500/25"
+                   >
+                     Generate roadmap
+                   </button>
+                   <button
+                     onClick={() => setShowSuggestion(false)}
+                     className="px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:text-on-surface border border-outline-variant/30 rounded-xl transition-all cursor-pointer"
+                   >
+                     Try Another Skill
+                   </button>
+                 </div>
+               </div>
+             </div>
+           )}
            <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center mx-auto text-indigo-400">
               <Compass size={40} className="animate-pulse" />
            </div>
@@ -435,8 +476,11 @@ export default function StudyPaths() {
                    </div>
 
                    {(!course.isFree && !isPro) ? (
-                     <button className="w-full py-3 bg-surface-container-highest text-on-surface-variant rounded-xl font-black text-[10px] uppercase tracking-widest border border-outline-variant cursor-not-allowed">
-                        Locked (Upgrade to Pro)
+                     <button 
+                       onClick={() => triggerUpgrade("Unlock complete access to PrepZify's premium expert-curated courses by upgrading your plan.")}
+                       className="w-full py-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-xl font-black text-[10px] uppercase tracking-widest border border-amber-500/20 active:scale-95 transition-all"
+                     >
+                        Unlock Course
                      </button>
                    ) : (
                      <a 
@@ -459,7 +503,10 @@ export default function StudyPaths() {
                    <h3 className="text-2xl font-black tracking-tight">Unlock Expert-Curated Engineering Library</h3>
                    <p className="text-sm font-medium opacity-80 max-w-xl mx-auto">Get full access to premium courses across all engineering branches, with deep-dive technical content curated from world-class institutions.</p>
                    <div className="flex justify-center gap-4 pt-4">
-                      <button className="px-8 py-4 bg-white text-indigo-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-all shadow-2xl">
+                      <button 
+                        onClick={() => triggerUpgrade("Unlock full access to premium engineering courses across all branches and deep-dive syllabus content.")}
+                        className="px-8 py-4 bg-white text-indigo-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-all shadow-2xl"
+                      >
                          Upgrade to Premium
                       </button>
                    </div>

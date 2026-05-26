@@ -36,7 +36,13 @@ service cloud.firestore {
              (!('streak' in data) || data.streak == null || data.streak is number) &&
              (!('xp' in data) || data.xp == null || data.xp is number) &&
              (!('questionsSolved' in data) || data.questionsSolved == null || data.questionsSolved is number) &&
-             (!('lastActive' in data) || data.lastActive == null || data.lastActive is timestamp);
+             (!('lastActive' in data) || data.lastActive == null || data.lastActive is timestamp) &&
+             (!('usageCodingCount' in data) || data.usageCodingCount == null || data.usageCodingCount is number) &&
+             (!('usageCodingLastReset' in data) || data.usageCodingLastReset == null || data.usageCodingLastReset is string) &&
+             (!('usageInterviewsCount' in data) || data.usageInterviewsCount == null || data.usageInterviewsCount is number) &&
+             (!('usageInterviewsLastReset' in data) || data.usageInterviewsLastReset == null || data.usageInterviewsLastReset is string) &&
+             (!('usageResumeCount' in data) || data.usageResumeCount == null || data.usageResumeCount is number) &&
+             (!('usageResumeLastReset' in data) || data.usageResumeLastReset == null || data.usageResumeLastReset is string);
     }
 
     match /users/{userId} {
@@ -44,7 +50,12 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isOwner(userId) && isValidUserStats(incoming()) && incoming().userId == userId;
       allow update: if isOwner(userId) && isValidUserStats(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['totalSessions', 'averageScore', 'streak', 'xp', 'questionsSolved', 'lastActive'])
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'totalSessions', 'averageScore', 'streak', 'xp', 'questionsSolved', 'lastActive',
+          'usageCodingCount', 'usageCodingLastReset',
+          'usageInterviewsCount', 'usageInterviewsLastReset',
+          'usageResumeCount', 'usageResumeLastReset'
+        ])
       );
     }
 
@@ -165,6 +176,78 @@ service cloud.firestore {
     match /users/{userId}/appliedJobs/{jobId} {
       allow read, delete: if isOwner(userId);
       allow create, update: if isOwner(userId) && isValidAppliedJob(incoming()) && isValidId(jobId);
+    }
+
+    // --- Razorpay Payment Rules ---
+    function isValidPaidPlan(planId) {
+      return planId == 'pro' || planId == 'pro-plus' || planId == 'elite';
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll([
+        'userId',
+        'provider',
+        'status',
+        'planId',
+        'planName',
+        'amount',
+        'currency',
+        'razorpayPaymentId',
+        'razorpayOrderId',
+        'startedAt',
+        'expiresAt',
+        'createdAt'
+      ]) &&
+             data.userId == request.auth.uid &&
+             data.provider == 'razorpay' &&
+             data.status == 'paid' &&
+             isValidPaidPlan(data.planId) &&
+             data.planName is string && data.planName.size() <= 80 &&
+             data.amount is number && data.amount > 0 &&
+             data.currency == 'INR' &&
+             data.razorpayPaymentId is string && data.razorpayPaymentId.size() <= 128 &&
+             data.razorpayOrderId is string && data.razorpayOrderId.size() <= 128 &&
+             data.startedAt is timestamp &&
+             data.expiresAt is timestamp &&
+             data.createdAt is timestamp &&
+             (!('email' in data) || data.email == null || data.email is string);
+    }
+
+    function isValidSubscription(data) {
+      return data.keys().hasAll([
+        'userId',
+        'status',
+        'planId',
+        'planName',
+        'provider',
+        'paymentId',
+        'orderId',
+        'startedAt',
+        'expiresAt',
+        'updatedAt'
+      ]) &&
+             data.userId == request.auth.uid &&
+             data.status in ['active', 'cancelled', 'expired'] &&
+             isValidPaidPlan(data.planId) &&
+             data.planName is string && data.planName.size() <= 80 &&
+             data.provider == 'razorpay' &&
+             data.paymentId is string && data.paymentId.size() <= 128 &&
+             data.orderId is string && data.orderId.size() <= 128 &&
+             data.startedAt is timestamp &&
+             data.expiresAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    match /users/{userId}/payments/{paymentId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidPayment(incoming()) && paymentId == incoming().razorpayPaymentId;
+      allow update, delete: if false;
+    }
+
+    match /users/{userId}/subscriptions/{subscriptionId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && subscriptionId == 'current' && isValidSubscription(incoming());
+      allow delete: if false;
     }
 
     // --- AssessmentQuestion Rules ---

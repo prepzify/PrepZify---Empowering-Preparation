@@ -31,9 +31,11 @@ import {
 } from 'lucide-react';
 import { Question, QuestionStore } from '../types';
 import { updateXp } from '../lib/firebase';
+import { useSubscription } from '../context/SubscriptionContext';
 
 export default function PracticeQuestions() {
   const [searchParams] = useSearchParams();
+  const { checkLimit, incrementUsage, triggerUpgrade } = useSubscription();
   const [filterCategory, setFilterCategory] = useState<'coding' | 'aptitude' | 'technical' | 'all'>('all');
   const [selectedBranch, setSelectedBranch] = useState<string>(searchParams.get('branch') || 'CSE');
   const [selectedTopic, setSelectedTopic] = useState<string>('ALL');
@@ -237,6 +239,14 @@ export default function PracticeQuestions() {
   };
 
   const handleOpenQuestion = (q: Question) => {
+    if (q.category === 'coding') {
+      const check = checkLimit('coding');
+      if (!check.allowed) {
+        triggerUpgrade("You have solved your limit of 3 free coding questions today. Upgrade to a premium plan to unlock unlimited practice!");
+        return;
+      }
+    }
+
     setSelectedQuestion(q);
     setSelectedOption(null);
     setShowAnswer(false);
@@ -373,6 +383,7 @@ If there are syntax errors, output them clearly. If logic is correct, show the r
           
           setXpAwarded(xp);
           await updateXp(xp, 1);
+          await incrementUsage('coding');
           setShowSuccessModal(true);
         } else {
           setOutput(`Wrong Answer\n${parsed.details}\n${parsed.error || ''}`);
@@ -383,6 +394,7 @@ If there are syntax errors, output them clearly. If logic is correct, show the r
            allPassed = true;
            setXpAwarded(50);
            await updateXp(50, 1);
+           await incrementUsage('coding');
            setShowSuccessModal(true);
            setOutput('Test cases passed (Heuristic check).');
         } else {

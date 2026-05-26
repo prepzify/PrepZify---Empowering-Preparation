@@ -14,6 +14,8 @@ import InterviewAI from './components/InterviewAI';
 import PracticeQuestions from './components/PracticeQuestions';
 import StudyPaths from './components/StudyPaths';
 import ResumeCheck from './components/ResumeCheck';
+import ResumeBuilder from './components/ResumeBuilder';
+import CampusPlanner from './components/CampusPlanner';
 import Settings from './components/Settings';
 import Support from './components/Support';
 import QuickPrepAssessment from './components/QuickPrepAssessment';
@@ -23,6 +25,8 @@ import LandingPage from './components/LandingPage';
 import AuthPage from './components/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
+import { SubscriptionProvider } from './context/SubscriptionContext';
+import { UpgradeModal } from './components/UpgradeModal';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -65,35 +69,40 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/landing" element={user ? <Navigate to="/" replace /> : <LandingPage />} />
-          <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+      <SubscriptionProvider>
+        <UpgradeModal />
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
 
-          {/* Protected Dashboard Routes */}
-          <Route path="/*" element={
-            <ProtectedRoute>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/interview" element={<InterviewAI />} />
-                  <Route path="/code" element={<PracticeQuestions />} />
-                  <Route path="/paths" element={<StudyPaths />} />
-                  <Route path="/resume" element={<ResumeCheck />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/support" element={<Support />} />
-                  <Route path="/quick-prep" element={<QuickPrepAssessment />} />
-                  <Route path="/expert" element={<LiveExpertBooking />} />
-                  <Route path="/interviews/history" element={<InterviewHistory />} />
-                  {/* Fallback for protected routes */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Layout>
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </Router>
+            {/* Protected Dashboard Routes */}
+            <Route path="/*" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/interview" element={<InterviewAI />} />
+                    <Route path="/code" element={<PracticeQuestions />} />
+                    <Route path="/paths" element={<StudyPaths />} />
+                    <Route path="/resume" element={<ResumeCheck />} />
+                    <Route path="/resume-builder" element={<ResumeBuilder />} />
+                    <Route path="/campus-plan" element={<CampusPlanner />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/support" element={<Support />} />
+                    <Route path="/quick-prep" element={<QuickPrepAssessment />} />
+                    <Route path="/expert" element={<LiveExpertBooking />} />
+                    <Route path="/interviews/history" element={<InterviewHistory />} />
+                    {/* Fallback for protected routes */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Layout>
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </Router>
+      </SubscriptionProvider>
     </ThemeProvider>
   );
 }
