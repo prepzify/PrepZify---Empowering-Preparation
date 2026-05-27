@@ -2,6 +2,7 @@ import { auth, db } from '../lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import Footer from './Footer';
 import QuickPrepAssessment from './QuickPrepAssessment';
 import PomodoroTimer from './PomodoroTimer';
 import { 
@@ -124,7 +125,7 @@ export default function Dashboard() {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-7xl mx-auto pb-20 space-y-12"
+      className="max-w-7xl mx-auto pb-0 space-y-12"
       id="dashboard-root"
     >
       {/* 1. Hero Overview Section */}
@@ -605,6 +606,7 @@ export default function Dashboard() {
           </div>
         )}
       </AnimatePresence>
+      <Footer />
     </motion.div>
   );
 }

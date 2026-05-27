@@ -25,6 +25,10 @@ import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/fi
 interface LiveInterviewOverlayProps {
   mode: 'audio' | 'video';
   role: string;
+  candidateName?: string;
+  techStack?: string;
+  targetCompany?: string;
+  resumeText?: string;
   onClose: () => void;
 }
 
@@ -71,7 +75,15 @@ const Button = ({
   );
 };
 
-export default function LiveInterviewOverlay({ mode, role, onClose }: LiveInterviewOverlayProps) {
+export default function LiveInterviewOverlay({ 
+  mode, 
+  role, 
+  candidateName = '',
+  techStack = '',
+  targetCompany = '',
+  resumeText = '',
+  onClose 
+}: LiveInterviewOverlayProps) {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
@@ -210,7 +222,7 @@ export default function LiveInterviewOverlay({ mode, role, onClose }: LiveInterv
       const resultJson = await generateInterviewQuestion([...transcriptRef.current, newMessage].map(t => ({
         role: t.role === 'model' ? 'ai' : 'user',
         content: t.chunk
-      })), role);
+      })), role, candidateName, techStack, targetCompany, resumeText);
       
       let parsedResult = resultJson;
       try {
@@ -318,7 +330,7 @@ export default function LiveInterviewOverlay({ mode, role, onClose }: LiveInterv
       setIsSessionActive(true);
       
       // Kickoff interview
-      const startJson = await generateInterviewQuestion([], role);
+      const startJson = await generateInterviewQuestion([], role, candidateName, techStack, targetCompany, resumeText);
       let parsedStart = startJson;
       try {
         parsedStart = startJson.replace(/```json\n?|```/g, '').trim();

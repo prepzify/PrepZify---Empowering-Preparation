@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { generateCampusPlan } from "../services/geminiService";
 import { getCookie, setCookie } from "../lib/cookieUtils";
+import { scopedStorage } from "../lib/storageUtils";
 import * as pdfjs from "pdfjs-dist";
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
 
@@ -59,8 +60,8 @@ interface CampusPlan {
 }
 
 export default function CampusPlanner() {
-  const [company, setCompany] = useState(() => getCookie("pz_cp_company"));
-  const [role, setRole] = useState(() => getCookie("pz_cp_role") || "");
+  const [company, setCompany] = useState(() => scopedStorage.getItem("pz_cp_company") || "");
+  const [role, setRole] = useState(() => scopedStorage.getItem("pz_cp_role") || "");
   const [daysLeft, setDaysLeft] = useState(15);
   const [campusDate, setCampusDate] = useState("");
   const [resumeText, setResumeText] = useState("");
@@ -73,16 +74,16 @@ export default function CampusPlanner() {
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const targetComp = getCookie("pz_target_company");
-  const targetRl = getCookie("pz_target_role");
+  const targetComp = scopedStorage.getItem("pz_target_company") || "";
+  const targetRl = scopedStorage.getItem("pz_target_role") || "";
   const [showSuggestion, setShowSuggestion] = useState(() => !!(targetComp && targetRl));
 
   useEffect(() => {
-    setCookie("pz_cp_company", company);
+    scopedStorage.setItem("pz_cp_company", company);
   }, [company]);
 
   useEffect(() => {
-    setCookie("pz_cp_role", role);
+    scopedStorage.setItem("pz_cp_role", role);
   }, [role]);
 
   const computeDays = (dateStr: string) => {

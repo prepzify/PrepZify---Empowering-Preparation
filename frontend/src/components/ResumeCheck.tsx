@@ -6,6 +6,7 @@ import { findJobs, Job } from '../services/jobService';
 import { dbService } from '../services/dbService';
 import { auth } from '../lib/firebase';
 import { Link, useNavigate } from 'react-router-dom';
+import { scopedStorage } from '../lib/storageUtils';
 import { useSubscription } from '../context/SubscriptionContext';
 import { 
   FileText, 
@@ -37,6 +38,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 interface AnalysisResult {
+  candidateName?: string;
+  techStack?: string[];
   score: number;
   placementProbability: number;
   readinessScore: number;
@@ -53,6 +56,7 @@ export default function ResumeCheck() {
   const { checkLimit, incrementUsage, triggerUpgrade } = useSubscription();
   const [resumeText, setResumeText] = useState('');
   const [jobTitle, setJobTitle] = useState('');
+  const [targetCompany, setTargetCompany] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -75,6 +79,7 @@ export default function ResumeCheck() {
         if (data) {
           setResumeText(data.resumeText || '');
           setJobTitle(data.jobTitle || '');
+          setTargetCompany(data.targetCompany || scopedStorage.getItem('pz_target_company') || '');
           setJobDescription(data.jobDescription || '');
           setFeedback(data.feedback || null);
           setMatchingJobs(data.matchingJobs || []);
@@ -82,14 +87,15 @@ export default function ResumeCheck() {
         }
         setIsAnalyzing(false);
       } else {
-        // Fallback to localStorage for guest
-        setResumeText(localStorage.getItem('bt_resume_text') || '');
-        setJobTitle(localStorage.getItem('bt_job_title') || '');
-        setJobDescription(localStorage.getItem('bt_job_desc') || '');
-        setFileName(localStorage.getItem('bt_file_name') || '');
-        const savedFeedback = localStorage.getItem('bt_analysis_feedback');
+        // Fallback to scopedStorage for guest
+        setResumeText(scopedStorage.getItem('bt_resume_text') || '');
+        setJobTitle(scopedStorage.getItem('bt_job_title') || '');
+        setTargetCompany(scopedStorage.getItem('pz_target_company') || '');
+        setJobDescription(scopedStorage.getItem('bt_job_desc') || '');
+        setFileName(scopedStorage.getItem('bt_file_name') || '');
+        const savedFeedback = scopedStorage.getItem('bt_analysis_feedback');
         if (savedFeedback) setFeedback(JSON.parse(savedFeedback));
-        const savedJobs = localStorage.getItem('bt_matching_jobs');
+        const savedJobs = scopedStorage.getItem('bt_matching_jobs');
         if (savedJobs) setMatchingJobs(JSON.parse(savedJobs));
       }
       setIsInitialLoad(false);
@@ -106,6 +112,7 @@ export default function ResumeCheck() {
       const data = {
         resumeText,
         jobTitle,
+        targetCompany,
         jobDescription,
         feedback,
         matchingJobs,
@@ -118,19 +125,20 @@ export default function ResumeCheck() {
           await dbService.saveResumeAnalysis(user.uid, data);
         }
       } else {
-        localStorage.setItem('bt_resume_text', resumeText);
-        localStorage.setItem('bt_job_title', jobTitle);
-        localStorage.setItem('bt_job_desc', jobDescription);
-        localStorage.setItem('bt_file_name', fileName);
-        if (feedback) localStorage.setItem('bt_analysis_feedback', JSON.stringify(feedback));
-        if (matchingJobs.length > 0) localStorage.setItem('bt_matching_jobs', JSON.stringify(matchingJobs));
+        scopedStorage.setItem('bt_resume_text', resumeText);
+        scopedStorage.setItem('bt_job_title', jobTitle);
+        scopedStorage.setItem('pz_target_company', targetCompany);
+        scopedStorage.setItem('bt_job_desc', jobDescription);
+        scopedStorage.setItem('bt_file_name', fileName);
+        if (feedback) scopedStorage.setItem('bt_analysis_feedback', JSON.stringify(feedback));
+        if (matchingJobs.length > 0) scopedStorage.setItem('bt_matching_jobs', JSON.stringify(matchingJobs));
       }
     };
     
     // Debounce save
     const timeout = setTimeout(saveData, 2000);
     return () => clearTimeout(timeout);
-  }, [resumeText, jobTitle, jobDescription, feedback, matchingJobs, fileName, isInitialLoad]);
+  }, [resumeText, jobTitle, targetCompany, jobDescription, feedback, matchingJobs, fileName, isInitialLoad]);
 
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -324,7 +332,12 @@ export default function ResumeCheck() {
                     <div className="relative">
                       <input 
                         type="text" 
-                        placeholder="Company Category (e.g. Fintech, FAANG)"
+                        placeholder="Target Company (e.g. Google, Amazon, TCS)"
+                        value={targetCompany}
+                        onChange={(e) => {
+                          setTargetCompany(e.target.value);
+                          scopedStorage.setItem('pz_target_company', e.target.value);
+                        }}
                         className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-4 text-sm focus:border-primary outline-none transition-all"
                       />
                     </div>
@@ -722,12 +735,12 @@ export default function ResumeCheck() {
                            setJobTitle('');
                            setJobDescription('');
                            setActiveTab('audit');
-                           localStorage.removeItem('bt_resume_text');
-                           localStorage.removeItem('bt_job_title');
-                           localStorage.removeItem('bt_job_desc');
-                           localStorage.removeItem('bt_file_name');
-                           localStorage.removeItem('bt_analysis_feedback');
-                           localStorage.removeItem('bt_matching_jobs');
+                           scopedStorage.removeItem('bt_resume_text');
+                           scopedStorage.removeItem('bt_job_title');
+                           scopedStorage.removeItem('bt_job_desc');
+                           scopedStorage.removeItem('bt_file_name');
+                           scopedStorage.removeItem('bt_analysis_feedback');
+                           scopedStorage.removeItem('bt_matching_jobs');
                            
                            const user = auth.currentUser;
                            if (user) {

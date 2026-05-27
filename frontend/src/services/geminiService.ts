@@ -51,8 +51,15 @@ export async function generateContent(params: {
   });
 }
 
-export async function generateInterviewQuestion(history: { role: string; content: string }[], role: string) {
-  const systemInstruction = `You are Olivia, a friendly, professional female technical recruiter and senior engineering interviewer for top tech companies. Your goal is to conduct a high-stakes, realistic but supportive mock interview for engineering student placements. Keep your responses extremely brief, human-sounding, and conversational to reduce latency.
+export async function generateInterviewQuestion(
+  history: { role: string; content: string }[], 
+  role: string,
+  candidateName: string = '',
+  techStack: string = '',
+  targetCompany: string = '',
+  resumeText: string = ''
+) {
+  let systemInstruction = `You are Olivia, a friendly, professional female technical recruiter and senior engineering interviewer for top tech companies. Your goal is to conduct a high-stakes, realistic but supportive mock interview for engineering student placements. Keep your responses extremely brief, human-sounding, and conversational to reduce latency.
 
 OPERATIONAL GUIDELINES:
 1. BE CONVERSATIONAL: Speak exactly like a real human girl would speak in a video call. Use conversational fillers occasionally ("Hmm," "Right," "Wow"). Avoid bullet points, long lists, or complex markdown. 
@@ -63,9 +70,24 @@ OPERATIONAL GUIDELINES:
 6. STEADY PROGRESSION: Follow these stages:
    - Stage 1: Introduction. Ask for their name and branch if not known.
    - Stage 2: Technical/Role-specific. Deep dive.
-   - Stage 3: HR & Behavioral.
+   - Stage 3: HR & Behavioral.`;
 
-Return your response in structured JSON format with the following keys:
+  if (candidateName) {
+    systemInstruction += `\n\nCandidate Name: ${candidateName}. Address the candidate by their name naturally during the conversation.`;
+  }
+  if (targetCompany) {
+    systemInstruction += `\n\nTarget Company: ${targetCompany}. Tailor the mock assessment specifically to ${targetCompany}'s technical standards, engineering culture, and values (e.g. Leadership Principles if Amazon, Googliness if Google). Ask questions typically asked at ${targetCompany} for a ${role} role.`;
+  } else {
+    systemInstruction += `\n\nTarget Position: ${role}. Conduct a high-quality industry-standard software engineering technical interview.`;
+  }
+  if (techStack) {
+    systemInstruction += `\n\nCandidate's Tech Stack & Skills: ${techStack}. Probe their knowledge of these technical topics, languages, and frameworks. Ask architectural scenarios and conceptual questions tailored specifically to this tech stack.`;
+  }
+  if (resumeText) {
+    systemInstruction += `\n\nCandidate's Resume Text:\n${resumeText}\n\nDuring technical and HR/behavioral stages, reference specific projects, work experience, or achievements listed in their resume to make the interview highly interrelated.`;
+  }
+
+  systemInstruction += `\n\nReturn your response in structured JSON format with the following keys:
 - feedback: An object containing "strengths" (array of strings) and "improvements" (array of strings) based on the user's PREVIOUS answer. If this is the start, leave these arrays empty.
 - nextQuestion: A string containing exactly what you want to say out loud to the candidate.`;
 
@@ -108,6 +130,8 @@ export async function analyzeResume(resumeText: string, jobTitle: string = 'Gene
 
 Provide an EXTREMELY detailed feedback in JSON format. 
 Include: 
+- candidateName (string): candidate's full name extracted from the resume (empty string if not found).
+- techStack (array of strings): candidate's primary tech stack and key skills extracted from the resume (empty array if not found).
 - score (0-100): overall ATS match score.
 - placementProbability (0-100): estimated chance of selection.
 - readinessScore (0-100): how ready they are for immediate deployment.

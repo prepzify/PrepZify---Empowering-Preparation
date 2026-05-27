@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { ChevronRight, ShieldCheck, Zap, Info, PlayCircle, BookOpen, UserCheck, MessageSquare } from 'lucide-react';
+import { ChevronRight, ShieldCheck, Zap, Info, PlayCircle, BookOpen, UserCheck, MessageSquare, Trophy, Target, X, Compass, Sparkles } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
+import { Link } from 'react-router-dom';
+import Footer from './Footer';
 
 export default function Support() {
   const [ticketSubject, setTicketSubject] = useState('');
@@ -9,6 +11,37 @@ export default function Support() {
   const [submitted, setSubmitted] = useState(false);
   const [showDocs, setShowDocs] = useState(false);
   const [discordToast, setDiscordToast] = useState(false);
+
+  const [showGoals, setShowGoals] = useState(false);
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const walkthroughSlides = [
+    {
+      title: 'AI Roadmaps & Study Paths',
+      desc: 'Enter any skill or company target to instantly generate a custom 4-week learning path loaded with curated resources and capstone deliverables.',
+      icon: Compass,
+      color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+    },
+    {
+      title: 'Practice Arena',
+      desc: 'Hone your software engineering instincts with ranked coding challenges covering data structures, system design, and algorithmic benchmarks.',
+      icon: BookOpen,
+      color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+    },
+    {
+      title: 'Interview AI Simulation',
+      desc: 'Experience full voice-enabled interactive interviews. Our adaptive AI acts as specialized industry practitioners probing your technical and behavioral edge cases.',
+      icon: PlayCircle,
+      color: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+    },
+    {
+      title: 'Resume Intelligence',
+      desc: 'Extract and analyze your profile contextually. Get immediate placement probability scores, formatting suggestions, and semantic keyword tailoring.',
+      icon: UserCheck,
+      color: 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+    }
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,6 +234,74 @@ export default function Support() {
               </div>
             </a>
           </div>
+
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mt-10 mb-4 px-1">Legal, Goals & Walkthrough</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl">
+            {/* Terms and Conditions */}
+            <Link 
+              to="/terms"
+              className="p-5 bg-surface-container border border-outline-variant rounded-xl hover:border-primary/40 hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between min-h-[140px] relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-lg -translate-y-4 translate-x-4" />
+              <div>
+                <span className="material-symbols-outlined text-primary mb-2 text-2xl group-hover:scale-110 transition-transform">gavel</span>
+                <h4 className="font-bold text-xs text-on-surface">Terms of Use</h4>
+                <p className="text-[10px] text-on-surface-variant mt-1 leading-relaxed">Platform regulations.</p>
+              </div>
+            </Link>
+
+            {/* Privacy Policy */}
+            <Link 
+              to="/privacy"
+              className="p-5 bg-surface-container border border-outline-variant rounded-xl hover:border-primary/40 hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between min-h-[140px] relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-lg -translate-y-4 translate-x-4" />
+              <div>
+                <span className="material-symbols-outlined text-primary mb-2 text-2xl group-hover:scale-110 transition-transform">lock</span>
+                <h4 className="font-bold text-xs text-on-surface">Privacy Policy</h4>
+                <p className="text-[10px] text-on-surface-variant mt-1 leading-relaxed">DPDP Act compliant framework.</p>
+              </div>
+            </Link>
+
+            {/* Refund Policy */}
+            <Link 
+              to="/refund"
+              className="p-5 bg-surface-container border border-outline-variant rounded-xl hover:border-primary/40 hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between min-h-[140px] relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-lg -translate-y-4 translate-x-4" />
+              <div>
+                <span className="material-symbols-outlined text-primary mb-2 text-2xl group-hover:scale-110 transition-transform">payments</span>
+                <h4 className="font-bold text-xs text-on-surface">Refund Policy</h4>
+                <p className="text-[10px] text-on-surface-variant mt-1 leading-relaxed">Cancellation covenants.</p>
+              </div>
+            </Link>
+
+            {/* Company Goals */}
+            <div 
+              onClick={() => setShowGoals(true)}
+              className="p-5 bg-surface-container border border-outline-variant rounded-xl hover:border-primary/40 hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between min-h-[140px] relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-lg -translate-y-4 translate-x-4" />
+              <div>
+                <span className="material-symbols-outlined text-primary mb-2 text-2xl group-hover:scale-110 transition-transform">track_changes</span>
+                <h4 className="font-bold text-xs text-on-surface">Company Goals</h4>
+                <p className="text-[10px] text-on-surface-variant mt-1 leading-relaxed">Primary mission boards.</p>
+              </div>
+            </div>
+
+            {/* Website Walkthrough */}
+            <div 
+              onClick={() => setShowWalkthrough(true)}
+              className="p-5 bg-surface-container border border-outline-variant rounded-xl hover:border-primary/40 hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between min-h-[140px] relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-lg -translate-y-4 translate-x-4" />
+              <div>
+                <span className="material-symbols-outlined text-primary mb-2 text-2xl group-hover:scale-110 transition-transform">explore</span>
+                <h4 className="font-bold text-xs text-on-surface">Walkthrough</h4>
+                <p className="text-[10px] text-on-surface-variant mt-1 leading-relaxed">Interactive platform guide.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="w-full lg:w-96 bg-surface-container border border-outline-variant rounded-2xl p-6 md:p-8 custom-glow">
@@ -296,6 +397,164 @@ export default function Support() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Company Goals Modal */}
+      <AnimatePresence>
+        {showGoals && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGoals(false)}
+              className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-surface border border-outline shadow-2xl rounded-[3rem] p-8 md:p-10 space-y-6 overflow-hidden text-on-surface"
+            >
+              <button 
+                onClick={() => setShowGoals(false)}
+                className="absolute top-6 right-6 p-2 hover:bg-surface-container-high rounded-full transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-on-surface-variant" />
+              </button>
+              
+              <div className="space-y-2 text-left">
+                <div className="flex items-center gap-2 text-[10px] font-black text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-widest w-fit">
+                  <Target size={10} /> Mission Board
+                </div>
+                <h3 className="text-2xl font-black text-on-surface tracking-tight">Our Platform Goals</h3>
+                <p className="text-sm text-on-surface-variant">Prepzify is built to unlock institutional placement opportunities for every aspirant.</p>
+              </div>
+
+              <div className="space-y-4 pt-2 text-left">
+                <div className="flex gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/30">
+                  <div className="p-3 bg-primary/10 text-primary rounded-xl shrink-0 h-fit">
+                    <Trophy size={18} />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-sm text-on-surface">Democratizing Tech Placement</h5>
+                    <p className="text-xs text-on-surface-variant leading-relaxed mt-1">Bridging the disparity between Tier-3 institutions and Tier-1 engineering roles by standardizing placement preparedness.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/30">
+                  <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl shrink-0 h-fit">
+                    <Sparkles size={18} />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-sm text-on-surface">Algorithmic Career Tailoring</h5>
+                    <p className="text-xs text-on-surface-variant leading-relaxed mt-1">Leveraging state-of-the-art LLMs (Gemini Pro) to offer real-time behavioral insights, ATS parsing, and interactive speech simulations.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 p-4 bg-surface-container rounded-2xl border border-outline-variant/30">
+                  <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl shrink-0 h-fit">
+                    <Zap size={18} />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-sm text-on-surface">Continuous Learning Habituation</h5>
+                    <p className="text-xs text-on-surface-variant leading-relaxed mt-1">Nurturing engineering streaks, global rankings, and structured study roadmaps to build consistency in daily preparation.</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Website Walkthrough Modal */}
+      <AnimatePresence>
+        {showWalkthrough && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowWalkthrough(false)}
+              className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-xl bg-surface border border-outline shadow-2xl rounded-[3rem] p-8 md:p-10 space-y-6 overflow-hidden text-on-surface"
+            >
+              <button 
+                onClick={() => setShowWalkthrough(false)}
+                className="absolute top-6 right-6 p-2 hover:bg-surface-container-high rounded-full transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-on-surface-variant" />
+              </button>
+
+              <div className="space-y-1 text-left">
+                <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Interactive Tour</div>
+                <h3 className="text-2xl font-black text-on-surface tracking-tight">Website Walkthrough</h3>
+                <p className="text-xs text-on-surface-variant">Let's walk through the core pillars of Prepzify.</p>
+              </div>
+
+              {/* Slider Content */}
+              <div className="min-h-[160px] p-6 bg-surface-container-low border border-outline rounded-3xl relative overflow-hidden flex flex-col gap-4 text-left">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl border shrink-0 ${walkthroughSlides[currentSlide].color}`}>
+                    {(() => {
+                      const IconComp = walkthroughSlides[currentSlide].icon;
+                      return <IconComp size={18} />;
+                    })()}
+                  </div>
+                  <h4 className="font-bold text-sm text-on-surface">{walkthroughSlides[currentSlide].title}</h4>
+                </div>
+                <p className="text-xs text-on-surface-variant leading-relaxed flex-1">
+                  {walkthroughSlides[currentSlide].desc}
+                </p>
+              </div>
+
+              {/* Slider Dots */}
+              <div className="flex justify-between items-center">
+                <div className="flex gap-1.5">
+                  {walkthroughSlides.map((_, i) => (
+                    <button 
+                      key={i}
+                      onClick={() => setCurrentSlide(i)}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${currentSlide === i ? 'w-6 bg-primary' : 'w-1.5 bg-on-surface-variant/20'}`}
+                    />
+                  ))}
+                </div>
+                
+                <div className="flex gap-2">
+                  <button 
+                    disabled={currentSlide === 0}
+                    onClick={() => setCurrentSlide(prev => Math.max(0, prev - 1))}
+                    className="px-4 py-2 border border-outline rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 cursor-pointer"
+                  >
+                    Prev
+                  </button>
+                  {currentSlide < walkthroughSlides.length - 1 ? (
+                    <button 
+                      onClick={() => setCurrentSlide(prev => Math.min(walkthroughSlides.length - 1, prev + 1))}
+                      className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer"
+                    >
+                      Next
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => { setShowWalkthrough(false); setCurrentSlide(0); }}
+                      className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer"
+                    >
+                      Got It!
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <Footer />
     </div>
   );
 }

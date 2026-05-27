@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { auth } from '../lib/firebase';
 import { PRICING_PLANS, PricingPlan, startRazorpayPayment } from '../services/paymentService';
 import Logo from './Logo';
+import Footer from './Footer';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -305,58 +306,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-20 px-6 md:px-12 border-t border-outline-variant">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-12">
-          <div className="space-y-6 max-w-xs">
-            <div className="flex items-center gap-3">
-              <Logo className="w-8 h-8" />
-              <h1 className="font-display text-xl font-bold tracking-tighter">
-                <span className="text-[#0056b3]">Prep</span>
-                <span className="text-[#ff9800]">Zify</span>
-              </h1>
-            </div>
-            <p className="text-sm text-on-surface-variant leading-relaxed">
-              Elevating the standard of technical interviews through AI-driven intelligence and adaptive skill mastery.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Platform</h4>
-              <ul className="space-y-2 text-sm text-on-surface-variant">
-                <li><a href="#" className="hover:text-on-surface">Mock Interviews</a></li>
-                <li><a href="#" className="hover:text-on-surface">Study Paths</a></li>
-                <li><a href="#" className="hover:text-on-surface">Rankings</a></li>
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Company</h4>
-              <ul className="space-y-2 text-sm text-on-surface-variant">
-                <li><a href="#" className="hover:text-on-surface">About Us</a></li>
-                <li><a href="#" className="hover:text-on-surface">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-on-surface">Terms of Service</a></li>
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Community</h4>
-              <ul className="space-y-2 text-sm text-on-surface-variant">
-                <li>
-                  <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-on-surface flex items-center gap-1.5 group">
-                    Discord
-                    <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider scale-90 transition-transform">Soon</span>
-                  </a>
-                </li>
-                <li><a href="https://t.me/prepzify" target="_blank" rel="noopener noreferrer" className="hover:text-on-surface">Telegram</a></li>
-                <li><a href="#" className="hover:text-on-surface">Twitter</a></li>
-                <li><a href="#" className="hover:text-on-surface">LinkedIn</a></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-outline-variant text-[10px] font-bold uppercase tracking-[0.3em] text-on-surface-variant text-center">
-          © 2026 PrepZify AI Platform. All Rights Reserved.
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

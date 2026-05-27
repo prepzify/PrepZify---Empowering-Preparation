@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { generateStudyPath, StudyPath } from '../services/studyPathService';
 import { dbService } from '../services/dbService';
 import { getCookie } from '../lib/cookieUtils';
+import { scopedStorage } from '../lib/storageUtils';
 import { auth } from '../lib/firebase';
 import { useSubscription } from '../context/SubscriptionContext';
 import { 
@@ -34,8 +35,8 @@ export default function StudyPaths() {
   const [courseCategory, setCourseCategory] = useState('All');
   const { isPro, triggerUpgrade } = useSubscription();
 
-  const targetComp = getCookie("pz_target_company");
-  const targetRl = getCookie("pz_target_role");
+  const targetComp = scopedStorage.getItem("pz_target_company");
+  const targetRl = scopedStorage.getItem("pz_target_role");
   const [showSuggestion, setShowSuggestion] = useState(() => !!(targetComp && targetRl));
 
   const EXPERT_COURSES = [
@@ -93,11 +94,11 @@ export default function StudyPaths() {
         }
         setIsGenerating(false);
       } else {
-        // Fallback to localStorage for guest
-        setSkill(querySkill || localStorage.getItem('bt_study_skill') || '');
-        const savedPath = localStorage.getItem('bt_study_path');
+        // Fallback to scopedStorage for guest
+        setSkill(querySkill || scopedStorage.getItem('bt_study_skill') || '');
+        const savedPath = scopedStorage.getItem('bt_study_path');
         if (savedPath) setPath(JSON.parse(savedPath));
-        const savedCompleted = localStorage.getItem('bt_study_completed');
+        const savedCompleted = scopedStorage.getItem('bt_study_completed');
         if (savedCompleted) setCompletedTasks(new Set(JSON.parse(savedCompleted)));
       }
     };
@@ -116,9 +117,9 @@ export default function StudyPaths() {
           });
         }
       } else {
-        localStorage.setItem('bt_study_skill', skill);
-        if (path) localStorage.setItem('bt_study_path', JSON.stringify(path));
-        localStorage.setItem('bt_study_completed', JSON.stringify(Array.from(completedTasks)));
+        scopedStorage.setItem('bt_study_skill', skill);
+        if (path) scopedStorage.setItem('bt_study_path', JSON.stringify(path));
+        scopedStorage.setItem('bt_study_completed', JSON.stringify(Array.from(completedTasks)));
       }
     };
     
@@ -303,15 +304,15 @@ export default function StudyPaths() {
                           </div>
                        </div>
 
-                       <button 
-                          onClick={() => {
-                            setPath(null);
-                            const user = auth.currentUser;
-                            if (!user) {
-                              localStorage.removeItem('bt_study_path');
-                              localStorage.removeItem('bt_study_completed');
-                            }
-                          }}
+                        <button 
+                           onClick={() => {
+                             setPath(null);
+                             const user = auth.currentUser;
+                             if (!user) {
+                               scopedStorage.removeItem('bt_study_path');
+                               scopedStorage.removeItem('bt_study_completed');
+                             }
+                           }}
                           className="w-full py-4 bg-indigo-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all mt-4"
                        >
                           Try Another Skill

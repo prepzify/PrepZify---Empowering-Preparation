@@ -138,7 +138,34 @@ export async function ensureUserStats(user: User) {
   }
 }
 
-export const signOut = () => firebaseSignOut(auth);
+export const signOut = async () => {
+  try {
+    const { scopedStorage } = await import('./storageUtils');
+    scopedStorage.clearGuestData();
+  } catch (error) {
+    console.warn("Failed to clear guest storage data on sign out:", error);
+  }
+  
+  // Clear any legacy/general cookies to avoid leakage
+  try {
+    const { eraseCookie } = await import('./cookieUtils');
+    const cookiesToErase = [
+      'pz_target_company',
+      'pz_target_role',
+      'pz_rb_phase',
+      'pz_rb_company',
+      'pz_rb_role',
+      'pz_rb_filename',
+      'pz_cp_company',
+      'pz_cp_role'
+    ];
+    cookiesToErase.forEach(name => eraseCookie(name));
+  } catch (error) {
+    console.warn("Failed to clear cookies on sign out:", error);
+  }
+
+  return firebaseSignOut(auth);
+};
 
 export async function updateXp(points: number, solveCount: number = 0) {
   // Re-exporting from dbService logic or keeping it here as a wrapper

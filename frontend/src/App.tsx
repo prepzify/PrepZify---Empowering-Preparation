@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged, auth } from './lib/firebase';
 import { useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
@@ -24,9 +24,22 @@ import InterviewHistory from './components/InterviewHistory';
 import LandingPage from './components/LandingPage';
 import AuthPage from './components/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import TermsAndConditions from './components/TermsAndConditions';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import RefundPolicy from './components/RefundPolicy';
 import { ThemeProvider } from './context/ThemeContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import { UpgradeModal } from './components/UpgradeModal';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, [pathname]);
+
+  return null;
+}
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -72,10 +85,14 @@ export default function App() {
       <SubscriptionProvider>
         <UpgradeModal />
         <Router>
+          <ScrollToTop />
           <Routes>
             {/* Public Routes */}
             <Route path="/landing" element={<LandingPage />} />
             <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+            <Route path="/terms" element={<div className="p-4 md:p-8 lg:p-12 min-h-screen bg-background"><TermsAndConditions /></div>} />
+            <Route path="/privacy" element={<div className="p-4 md:p-8 lg:p-12 min-h-screen bg-background"><PrivacyPolicy /></div>} />
+            <Route path="/refund" element={<div className="p-4 md:p-8 lg:p-12 min-h-screen bg-background"><RefundPolicy /></div>} />
 
             {/* Protected Dashboard Routes */}
             <Route path="/*" element={

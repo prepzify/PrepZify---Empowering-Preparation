@@ -4,6 +4,7 @@ import { Upload, FileText, Sparkles, Loader2, Download, Trash2, Edit3, Eye, Buil
 import { generateTailoredResume } from "../services/geminiService";
 import { exportResumeAsDocx, GeneratedResume } from "../lib/docxExport";
 import { getCookie, setCookie } from "../lib/cookieUtils";
+import { scopedStorage } from "../lib/storageUtils";
 import * as pdfjs from "pdfjs-dist";
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
 
@@ -12,16 +13,16 @@ const empty = (): GeneratedResume => ({name:"",email:"",phone:"",linkedin:"",git
 
 export default function ResumeBuilder() {
   const [phase, setPhase] = useState<"input"|"edit">(() => {
-    const savedPhase = getCookie("pz_rb_phase");
+    const savedPhase = scopedStorage.getItem("pz_rb_phase");
     return (savedPhase === "edit" || savedPhase === "input") ? savedPhase : "input";
   });
   const [originalResume, setOriginalResume] = useState("");
-  const [company, setCompany] = useState(() => getCookie("pz_rb_company"));
-  const [role, setRole] = useState(() => getCookie("pz_rb_role"));
+  const [company, setCompany] = useState(() => scopedStorage.getItem("pz_rb_company") || "");
+  const [role, setRole] = useState(() => scopedStorage.getItem("pz_rb_role") || "");
   const [jobDesc, setJobDesc] = useState("");
   const [resume, setResume] = useState<GeneratedResume>(() => {
     try {
-      const saved = localStorage.getItem("pz_rb_generated_resume");
+      const saved = scopedStorage.getItem("pz_rb_generated_resume");
       return saved ? JSON.parse(saved) : empty();
     } catch {
       return empty();
@@ -30,37 +31,37 @@ export default function ResumeBuilder() {
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [view, setView] = useState<"edit"|"preview">("edit");
-  const [fileName, setFileName] = useState(() => getCookie("pz_rb_filename") || "");
+  const [fileName, setFileName] = useState(() => scopedStorage.getItem("pz_rb_filename") || "");
   const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setCookie("pz_rb_company", company);
+    scopedStorage.setItem("pz_rb_company", company);
   }, [company]);
 
   useEffect(() => {
-    setCookie("pz_rb_role", role);
+    scopedStorage.setItem("pz_rb_role", role);
   }, [role]);
 
   useEffect(() => {
-    setCookie("pz_rb_phase", phase);
+    scopedStorage.setItem("pz_rb_phase", phase);
   }, [phase]);
 
   useEffect(() => {
     if (phase === "edit") {
-      localStorage.setItem("pz_rb_generated_resume", JSON.stringify(resume));
+      scopedStorage.setItem("pz_rb_generated_resume", JSON.stringify(resume));
     }
   }, [resume, phase]);
 
   useEffect(() => {
-    setCookie("pz_rb_filename", fileName);
+    scopedStorage.setItem("pz_rb_filename", fileName);
   }, [fileName]);
 
   const handleRegenerate = () => {
     setPhase("input");
-    setCookie("pz_rb_phase", "input");
-    localStorage.removeItem("pz_rb_generated_resume");
+    scopedStorage.setItem("pz_rb_phase", "input");
+    scopedStorage.removeItem("pz_rb_generated_resume");
     setFileName("");
     setOriginalResume("");
     setResume(empty());
@@ -98,8 +99,8 @@ export default function ResumeBuilder() {
       setResume(JSON.parse(raw.trim()));
       
       // Store globally recognized preparation target
-      setCookie("pz_target_company", company);
-      setCookie("pz_target_role", role);
+      scopedStorage.setItem("pz_target_company", company);
+      scopedStorage.setItem("pz_target_role", role);
       
       setPhase("edit");
     } catch { showToast("Generation failed. Please retry."); }
