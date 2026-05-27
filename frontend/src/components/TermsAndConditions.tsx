@@ -107,7 +107,7 @@ export default function TermsAndConditions() {
             </ol>
           </div>
           <p className="text-xs text-on-surface-variant leading-relaxed italic">
-            <strong>Security Enforcement:</strong> Notify us at <a href="mailto:support@prepzify.com" className="text-primary hover:underline font-bold">support@prepzify.com</a> instantly upon finding compromised credentials. Suspicious concurrent IP activity will trigger immediate termination of access.
+            <strong>Security Enforcement:</strong> Notify us at <a href="mailto:teamprepzify@gmail.com" className="text-primary hover:underline font-bold">teamprepzify@gmail.com</a> instantly upon finding compromised credentials. Suspicious concurrent IP activity will trigger immediate termination of access.
           </p>
         </div>
       )
@@ -253,7 +253,7 @@ export default function TermsAndConditions() {
       content: (
         <div className="space-y-4">
           <p className="text-sm text-on-surface-variant leading-relaxed">
-            If you discover any user violating these terms, or encounter bugs that expose system vulnerabilities, please report the incident instantly to our security team at <a href="mailto:support@prepzify.com" className="text-primary hover:underline font-bold">support@prepzify.com</a>.
+            If you discover any user violating these terms, or encounter bugs that expose system vulnerabilities, please report the incident instantly to our security team at <a href="mailto:teamprepzify@gmail.com" className="text-primary hover:underline font-bold">teamprepzify@gmail.com</a>.
           </p>
           <div className="p-4 bg-surface-container rounded-2xl border border-outline-variant/30 text-center py-6">
             <p className="text-xs text-on-surface-variant font-bold">Thank you for helping us maintain a safe and honest engineering prep environment.</p>

@@ -106,7 +106,7 @@ export default function Footer() {
                 </a>
               </li>
               <li><Link to="/support" className="hover:text-primary transition-colors">Help Center</Link></li>
-              <li><a href="mailto:support@prepzify.com" className="hover:text-primary transition-colors font-bold">support@prepzify.com</a></li>
+              <li><a href="mailto:teamprepzify@gmail.com" className="hover:text-primary transition-colors font-bold">teamprepzify@gmail.com</a></li>
             </ul>
           </div>
         </div>

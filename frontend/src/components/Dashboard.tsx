@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Footer from './Footer';
 import QuickPrepAssessment from './QuickPrepAssessment';
-import PomodoroTimer from './PomodoroTimer';
+import { scopedStorage } from '../lib/storageUtils';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer 
 } from 'recharts';
@@ -33,7 +33,9 @@ export default function Dashboard() {
     nextRank: 'Senior Architect',
     progress: 0,
     globalRank: 0,
-    totalUsers: 0
+    totalUsers: 0,
+    streak: 1,
+    maxStreak: 1
   });
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [interviewCount, setInterviewCount] = useState(0);
@@ -48,7 +50,52 @@ export default function Dashboard() {
   ];
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // Guest fallback: dynamic streak algorithm using scopedStorage
+      const savedStreak = scopedStorage.getItem('bt_streak');
+      const savedMaxStreak = scopedStorage.getItem('bt_max_streak');
+      const savedLastActive = scopedStorage.getItem('bt_last_active');
+
+      let currentStreak = savedStreak ? Number(savedStreak) : 1;
+      let maxStreak = savedMaxStreak ? Number(savedMaxStreak) : 1;
+      const now = new Date();
+
+      if (savedLastActive) {
+        const lastActiveDate = new Date(savedLastActive);
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        const compareDate = new Date(lastActiveDate.getFullYear(), lastActiveDate.getMonth(), lastActiveDate.getDate());
+
+        if (compareDate.getTime() === yesterday.getTime()) {
+          currentStreak += 1;
+          maxStreak = Math.max(maxStreak, currentStreak);
+        } else if (compareDate.getTime() < yesterday.getTime()) {
+          currentStreak = 1;
+        }
+      } else {
+        currentStreak = 1;
+        maxStreak = Math.max(maxStreak, currentStreak);
+      }
+
+      // Save updated guest values
+      scopedStorage.setItem('bt_streak', String(currentStreak));
+      scopedStorage.setItem('bt_max_streak', String(maxStreak));
+      scopedStorage.setItem('bt_last_active', now.toISOString());
+
+      setUserStats(prev => ({
+        ...prev,
+        streak: currentStreak,
+        maxStreak: maxStreak
+      }));
+      return;
+    }
+
+    const runStreakCheckAndStats = async () => {
+      await dbService.checkAndUpdateStreak(user.uid);
+    };
+    runStreakCheckAndStats();
 
     const unsub = dbService.onStatsUpdate(user.uid, async (data: any) => {
       const xp = data.xp || 0;
@@ -74,7 +121,9 @@ export default function Dashboard() {
         nextRank,
         progress: xp > 10000 ? 100 : progress,
         globalRank: rankInfo?.rank || 0,
-        totalUsers: rankInfo?.total || 0
+        totalUsers: rankInfo?.total || 0,
+        streak: data.streak || 1,
+        maxStreak: data.maxStreak || 1
       });
     });
 
@@ -137,7 +186,7 @@ export default function Dashboard() {
               <h2 className="text-4xl md:text-5xl font-black text-on-surface tracking-tight leading-none">
                 Welcome back, <span className="text-primary">{user?.displayName?.split(' ')[0] || 'Engineer'}</span>
               </h2>
-              <p className="text-on-surface-variant font-medium">Your carrier pulse is looking strong. You're in the top 15% this week.</p>
+              <p className="text-on-surface-variant font-medium">Your career pulse is looking strong. You're in the top 15% this week.</p>
            </div>
 
             <div className="flex flex-wrap gap-4 items-stretch">
@@ -160,7 +209,8 @@ export default function Dashboard() {
                  </div>
                  <div>
                     <div className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest leading-tight">Active Streak</div>
-                    <div className="text-xl font-black text-on-surface">12 Days</div>
+                    <div className="text-xl font-black text-on-surface">{userStats.streak || 1} Days</div>
+                    <div className="text-[10px] text-on-surface-variant font-bold mt-0.5">Max Streak: {userStats.maxStreak || 1} days</div>
                  </div>
               </div>
 
@@ -394,9 +444,6 @@ export default function Dashboard() {
          {/* Right Column: 4 Cols */}
          <div className="col-span-12 lg:col-span-4 space-y-12">
             
-            {/* 10. Productivity & Pomodoro */}
-            <PomodoroTimer />
-
             {/* 5. Live Progress Tracking */}
             <section className="bg-surface-container p-8 rounded-[2.5rem] border border-outline-variant space-y-8" id="progress-tracking">
                <div className="flex items-center justify-between">
@@ -504,7 +551,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white leading-none">Premium Benefits</h3>
-                  <p className="text-white/80 font-bold text-sm uppercase tracking-widest mt-3">Elevate your carrier to the elite tier with dedicated AI guidance</p>
+                  <p className="text-white/80 font-bold text-sm uppercase tracking-widest mt-3">Elevate your career to the elite tier with dedicated AI guidance</p>
                 </div>
               </div>
               
@@ -527,10 +574,10 @@ export default function Dashboard() {
 
             <div className="w-full lg:w-auto shrink-0">
               <button 
-                onClick={() => navigate('/paths')}
+                onClick={() => navigate('/landing#pricing')}
                 className="px-16 py-7 bg-white text-secondary rounded-[2.5rem] font-black text-base uppercase tracking-[0.2em] hover:scale-[1.03] active:scale-[0.98] transition-all shadow-2xl shadow-black/20"
               >
-                Unlock All Features
+                View All Plans
               </button>
             </div>
           </div>

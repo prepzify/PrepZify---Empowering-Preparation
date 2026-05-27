@@ -125,7 +125,7 @@ export default function RefundPolicy() {
             <div className="p-4 bg-surface-container rounded-2xl border border-outline-variant/30">
               <h5 className="font-bold text-xs text-on-surface mb-1">Reporting Timeline</h5>
               <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                The user must notify the billing team by sending a descriptive email containing the clear transaction reference ID, payment timestamp, and proof of account debit to <a href="mailto:support@prepzify.com" className="text-primary hover:underline font-bold">support@prepzify.com</a> within <strong>7 days</strong> of the failed attempt.
+                The user must notify the billing team by sending a descriptive email containing the clear transaction reference ID, payment timestamp, and proof of account debit to <a href="mailto:teamprepzify@gmail.com" className="text-primary hover:underline font-bold">teamprepzify@gmail.com</a> within <strong>7 days</strong> of the failed attempt.
               </p>
             </div>
             <div className="p-4 bg-surface-container rounded-2xl border border-outline-variant/30">
@@ -161,7 +161,7 @@ export default function RefundPolicy() {
               <span className="material-symbols-outlined text-primary mb-2">mail</span>
               <h5 className="font-bold text-xs text-on-surface">Email Contact</h5>
               <p className="text-xs text-primary hover:underline font-bold mt-1">
-                <a href="mailto:support@prepzify.com">support@prepzify.com</a>
+                <a href="mailto:teamprepzify@gmail.com">teamprepzify@gmail.com</a>
               </p>
             </div>
             <div className="p-4 bg-surface-container rounded-2xl border border-outline-variant/30 text-center">

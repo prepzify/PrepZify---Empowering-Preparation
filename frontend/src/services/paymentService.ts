@@ -1,5 +1,6 @@
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
+import { apiUrl } from '../lib/apiUrl';
 
 export type PlanId = 'free' | 'pro' | 'pro-plus' | 'elite';
 
@@ -176,7 +177,7 @@ function loadRazorpayScript() {
 
 async function createOrder(plan: PricingPlan): Promise<RazorpayOrderResponse> {
   const user = auth.currentUser;
-  const response = await fetch('/api/payments/create-order', {
+  const response = await fetch(apiUrl('/api/payments/create-order'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -198,7 +199,7 @@ async function verifyPayment(
   plan: PricingPlan,
   response: RazorpaySuccessResponse
 ): Promise<VerifiedPaymentResponse> {
-  const verifyResponse = await fetch('/api/payments/verify', {
+  const verifyResponse = await fetch(apiUrl('/api/payments/verify'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

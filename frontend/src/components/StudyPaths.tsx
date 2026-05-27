@@ -168,6 +168,19 @@ export default function StudyPaths() {
     setCompletedTasks(newSet);
   };
 
+  // Granular Progress Calculation
+  const totalModules = path?.modules.length || 0;
+  const totalResources = path?.modules.reduce((acc, m) => acc + m.resources.length, 0) || 0;
+  const totalItems = totalModules + totalResources;
+
+  const completedModulesCount = path?.modules.filter((_, mIdx) => completedTasks.has(`${mIdx}-0`)).length || 0;
+  const completedResourcesCount = path?.modules.reduce((acc, m, mIdx) => {
+    return acc + m.resources.filter((_, rIdx) => completedTasks.has(`${mIdx}-${rIdx + 1}`)).length;
+  }, 0) || 0;
+
+  const completedItemsCount = completedModulesCount + completedResourcesCount;
+  const progressPercent = totalItems > 0 ? Math.round((completedItemsCount / totalItems) * 100) : 0;
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 lg:space-y-12">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -320,22 +333,22 @@ export default function StudyPaths() {
                     </div>
                  </div>
 
-                 <div className="bg-surface-container rounded-3xl p-6 border border-outline-variant/30">
-                    <h4 className="text-[10px] font-black uppercase text-on-surface-variant tracking-widest mb-4">Progress Tracker</h4>
-                    <div className="space-y-4">
-                       <div className="flex justify-between items-end">
-                          <span className="text-2xl font-black text-on-surface">{Math.round((completedTasks.size / (path?.modules.length || 1)) * 100)}%</span>
-                          <span className="text-[10px] font-black text-on-surface-variant uppercase">{completedTasks.size} / {path?.modules.length ?? 0} Steps</span>
-                       </div>
-                       <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
-                          <motion.div 
-                             initial={{ width: 0 }}
-                             animate={{ width: `${(completedTasks.size / (path?.modules.length || 1)) * 100}%` }}
-                             className="h-full bg-indigo-500" 
-                          />
-                       </div>
-                    </div>
-                 </div>
+                  <div className="bg-surface-container rounded-3xl p-6 border border-outline-variant/30">
+                     <h4 className="text-[10px] font-black uppercase text-on-surface-variant tracking-widest mb-4">Progress Tracker</h4>
+                     <div className="space-y-4">
+                        <div className="flex justify-between items-end">
+                           <span className="text-2xl font-black text-on-surface">{progressPercent}%</span>
+                           <span className="text-[10px] font-black text-on-surface-variant uppercase">{completedItemsCount} / {totalItems} Steps Completed</span>
+                        </div>
+                        <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                           <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progressPercent}%` }}
+                              className="h-full bg-indigo-500" 
+                           />
+                        </div>
+                     </div>
+                  </div>
               </div>
            </div>
 
@@ -354,35 +367,57 @@ export default function StudyPaths() {
                          </div>
                          <button 
                             onClick={() => toggleTask(mIdx, 0)}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${completedTasks.has(`${mIdx}-0`) ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-on-surface text-surface'}`}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${completedTasks.has(`${mIdx}-0`) ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-surface-container-high hover:border-indigo-400 border-outline-variant/30 text-on-surface-variant'}`}
                          >
-                            {completedTasks.has(`${mIdx}-0`) ? <CheckCircle2 size={14} /> : 'Complete Module'}
+                            <span className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${completedTasks.has(`${mIdx}-0`) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-outline-variant/50 bg-white/5'}`}>
+                              {completedTasks.has(`${mIdx}-0`) && <CheckCircle2 size={12} className="text-white fill-emerald-500" />}
+                            </span>
+                            <span>{completedTasks.has(`${mIdx}-0`) ? 'Module Completed' : 'Mark Module Complete'}</span>
                          </button>
                       </div>
 
                       <p className="text-sm text-on-surface-variant leading-relaxed font-medium opacity-80">{module.description}</p>
 
                       <div className="space-y-4">
-                         <h4 className="text-[10px] font-black uppercase text-on-surface-variant tracking-widest">Curated Resources</h4>
+                         <h4 className="text-[10px] font-black uppercase text-on-surface-variant tracking-widest">Curated Topics & Resources</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {module.resources.map((res, rIdx) => (
-                              <a 
-                                 key={rIdx} 
-                                 href={res.url} 
-                                 target="_blank" 
-                                 rel="noreferrer"
-                                 className="flex items-center gap-4 p-4 bg-surface-container-high rounded-2xl border border-outline-variant/20 hover:border-indigo-400 transition-all group/res"
-                              >
-                                 <div className="p-3 bg-white/5 rounded-xl text-on-surface-variant group-hover/res:text-indigo-400 transition-colors">
-                                    {res.type === 'video' ? <PlayCircle size={20} /> : <FileText size={20} />}
-                                 </div>
-                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-bold text-on-surface truncate">{res.title}</p>
-                                    <p className="text-[9px] text-on-surface-variant uppercase font-black tracking-tighter">{res.type}</p>
-                                 </div>
-                                 <ExternalLink size={14} className="opacity-0 group-hover/res:opacity-100 transition-all" />
-                              </a>
-                            ))}
+                            {module.resources.map((res, rIdx) => {
+                              const isResCompleted = completedTasks.has(`${mIdx}-${rIdx + 1}`);
+                              return (
+                                <div 
+                                   key={rIdx} 
+                                   className={`flex items-center gap-3 p-4 bg-surface-container-high rounded-2xl border transition-all ${isResCompleted ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-outline-variant/20 hover:border-indigo-400'} group/res`}
+                                >
+                                   {/* Checkbox button */}
+                                   <button
+                                     onClick={(e) => {
+                                       e.preventDefault();
+                                       e.stopPropagation();
+                                       toggleTask(mIdx, rIdx + 1);
+                                     }}
+                                     className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all shrink-0 cursor-pointer ${isResCompleted ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-outline-variant/50 hover:border-indigo-400 bg-white/5'}`}
+                                   >
+                                     {isResCompleted && <CheckCircle2 size={14} className="text-white fill-emerald-500" />}
+                                   </button>
+
+                                   <a 
+                                      href={res.url} 
+                                      target="_blank" 
+                                      rel="noreferrer"
+                                      className="flex-1 flex items-center gap-3 min-w-0"
+                                   >
+                                      <div className="p-2.5 bg-white/5 rounded-xl text-on-surface-variant group-hover/res:text-indigo-400 transition-colors">
+                                         {res.type === 'video' ? <PlayCircle size={18} /> : <FileText size={18} />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                         <p className={`text-xs font-bold text-on-surface truncate ${isResCompleted ? 'line-through opacity-60' : ''}`}>{res.title}</p>
+                                         <p className="text-[9px] text-on-surface-variant uppercase font-black tracking-tighter">{res.type}</p>
+                                      </div>
+                                      <ExternalLink size={12} className="opacity-0 group-hover/res:opacity-100 transition-all text-on-surface-variant shrink-0" />
+                                   </a>
+                                </div>
+                              );
+                            })}
                          </div>
                       </div>
 

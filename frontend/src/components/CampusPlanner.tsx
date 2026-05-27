@@ -8,6 +8,8 @@ import {
 import { generateCampusPlan } from "../services/geminiService";
 import { getCookie, setCookie } from "../lib/cookieUtils";
 import { scopedStorage } from "../lib/storageUtils";
+import { dbService } from "../services/dbService";
+import { auth } from "../lib/firebase";
 import * as pdfjs from "pdfjs-dist";
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
 
@@ -78,6 +80,104 @@ export default function CampusPlanner() {
   const targetRl = scopedStorage.getItem("pz_target_role") || "";
   const [showSuggestion, setShowSuggestion] = useState(() => !!(targetComp && targetRl));
 
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
+
+  // Load from Firebase/localStorage on mount
+  useEffect(() => {
+    const loadData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        setLoading(true);
+        const savedPlan = await dbService.getCampusPlan(user.uid);
+        if (savedPlan) {
+          setPlan(savedPlan);
+          setCompany(savedPlan.company || "");
+          setRole(savedPlan.role || "");
+          setDaysLeft(savedPlan.daysLeft || 15);
+          if (savedPlan.completedTasks) {
+            setCompletedTasks(new Set(savedPlan.completedTasks));
+          }
+        }
+        setLoading(false);
+      } else {
+        const savedPlan = scopedStorage.getItem('bt_campus_plan');
+        if (savedPlan) {
+          const parsed = JSON.parse(savedPlan);
+          setPlan(parsed);
+          setCompany(parsed.company || "");
+          setRole(parsed.role || "");
+          setDaysLeft(parsed.daysLeft || 15);
+        }
+        const savedCompleted = scopedStorage.getItem('bt_campus_completed');
+        if (savedCompleted) {
+          setCompletedTasks(new Set(JSON.parse(savedCompleted)));
+        }
+      }
+    };
+    loadData();
+  }, []);
+
+  // Save to Firebase/localStorage on changes
+  useEffect(() => {
+    const saveData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        if (plan) {
+          await dbService.saveCampusPlan(user.uid, {
+            ...plan,
+            completedTasks: Array.from(completedTasks)
+          });
+        }
+      } else {
+        if (plan) {
+          scopedStorage.setItem('bt_campus_plan', JSON.stringify(plan));
+        } else {
+          scopedStorage.removeItem('bt_campus_plan');
+        }
+        scopedStorage.setItem('bt_campus_completed', JSON.stringify(Array.from(completedTasks)));
+      }
+    };
+    
+    const timeout = setTimeout(saveData, 2000);
+    return () => clearTimeout(timeout);
+  }, [plan, completedTasks]);
+
+  const toggleTaskDay = async (dayNum: number) => {
+    const id = `day-${dayNum}`;
+    const newSet = new Set(completedTasks);
+    const wasCompleted = newSet.has(id);
+    
+    if (wasCompleted) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+      // Increment XP for day completion (+100 XP)
+      const user = auth.currentUser;
+      if (user) {
+        await dbService.incrementStats(user.uid, 100, 1);
+      }
+    }
+    setCompletedTasks(newSet);
+  };
+
+  const toggleTaskTopic = async (dayNum: number, taskIdx: number) => {
+    const id = `task-${dayNum}-${taskIdx}`;
+    const newSet = new Set(completedTasks);
+    const wasCompleted = newSet.has(id);
+    
+    if (wasCompleted) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+      // Increment XP for task completion (+30 XP)
+      const user = auth.currentUser;
+      if (user) {
+        await dbService.incrementStats(user.uid, 30, 0);
+      }
+    }
+    setCompletedTasks(newSet);
+  };
+
   useEffect(() => {
     scopedStorage.setItem("pz_cp_company", company);
   }, [company]);
@@ -134,6 +234,19 @@ export default function CampusPlanner() {
     : [];
 
   const totalHours = plan ? plan.days.reduce((s, d) => s + (d.estimatedHours || 0), 0) : 0;
+
+  // Plan Progress Calculation
+  const totalDays = plan?.days.length || 0;
+  const totalTasks = plan?.days.reduce((acc, d) => acc + d.tasks.length, 0) || 0;
+  const totalItems = totalDays + totalTasks;
+
+  const completedDaysCount = plan?.days.filter((d) => completedTasks.has(`day-${d.day}`)).length || 0;
+  const completedTasksCount = plan?.days.reduce((acc, d) => {
+    return acc + d.tasks.filter((_, tIdx) => completedTasks.has(`task-${d.day}-${tIdx}`)).length;
+  }, 0) || 0;
+
+  const completedItemsCount = completedDaysCount + completedTasksCount;
+  const progressPercent = totalItems > 0 ? Math.round((completedItemsCount / totalItems) * 100) : 0;
 
   if (!plan) return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -320,6 +433,24 @@ export default function CampusPlanner() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left: Stats + Meta */}
         <div className="lg:col-span-4 space-y-5">
+          {/* Progress Tracker */}
+          <div className="bg-surface-container rounded-2xl border border-outline-variant/30 p-5 space-y-4">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface">Plan Progress</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-end">
+                <span className="text-2xl font-black text-on-surface">{progressPercent}%</span>
+                <span className="text-[9px] font-black text-on-surface-variant uppercase">{completedItemsCount} / {totalItems} Steps Completed</span>
+              </div>
+              <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPercent}%` }}
+                  className="h-full bg-primary" 
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Day 0 Checklist */}
           <div className="bg-surface-container rounded-2xl border border-outline-variant/30 p-5">
             <div className="flex items-center gap-2 mb-4">
@@ -327,12 +458,27 @@ export default function CampusPlanner() {
               <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface">Day 0 — Do Today</h3>
             </div>
             <div className="space-y-2">
-              {plan.day0Checklist.map((item, i) => (
-                <div key={i} className="flex gap-2.5 text-xs text-on-surface-variant leading-relaxed">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                  {item}
-                </div>
-              ))}
+              {plan.day0Checklist.map((item, i) => {
+                const isChecklistCompleted = completedTasks.has(`day0-${i}`);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      const id = `day0-${i}`;
+                      const newSet = new Set(completedTasks);
+                      if (newSet.has(id)) newSet.delete(id);
+                      else newSet.add(id);
+                      setCompletedTasks(newSet);
+                    }}
+                    className="w-full flex gap-3 text-left text-xs leading-relaxed group/item cursor-pointer items-start focus:outline-none"
+                  >
+                    <span className={`w-4 h-4 rounded flex items-center justify-center border transition-all shrink-0 mt-0.5 ${isChecklistCompleted ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-outline-variant/50 group-hover/item:border-primary bg-white/5'}`}>
+                      {isChecklistCompleted && <CheckCircle2 size={10} className="text-white fill-emerald-500" />}
+                    </span>
+                    <span className={`text-on-surface-variant ${isChecklistCompleted ? 'line-through opacity-60' : ''}`}>{item}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -425,27 +571,43 @@ export default function CampusPlanner() {
                 className={`bg-surface-container rounded-2xl border transition-all overflow-hidden ${day.priority === "high" ? "border-primary/30" : "border-outline-variant/30"}`}
               >
                 {/* Day header */}
-                <button
-                  onClick={() => setExpandedDay(isExpanded ? null : day.day)}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-surface-container-high transition-colors text-left"
+                <div
+                  className="w-full flex items-center gap-4 p-4 hover:bg-surface-container-high transition-all text-left relative group/day"
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 border ${PHASE_COLORS[phColor] || PHASE_COLORS.blue}`}>
-                    {day.day}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-on-surface text-sm truncate">{day.title}</p>
-                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${PRIORITY_BADGE[day.priority] || PRIORITY_BADGE.medium}`}>
-                        {day.priority}
-                      </span>
+                  {/* Checkbox button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleTaskDay(day.day);
+                    }}
+                    className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all shrink-0 cursor-pointer ${completedTasks.has(`day-${day.day}`) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-outline-variant/50 hover:border-primary bg-white/5'}`}
+                  >
+                    {completedTasks.has(`day-${day.day}`) && <CheckCircle2 size={14} className="text-white fill-emerald-500" />}
+                  </button>
+
+                  {/* Clickable area for accordion */}
+                  <button
+                    onClick={() => setExpandedDay(isExpanded ? null : day.day)}
+                    className="flex-1 flex items-center gap-4 text-left min-w-0 focus:outline-none"
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 border ${completedTasks.has(`day-${day.day}`) ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : (PHASE_COLORS[phColor] || PHASE_COLORS.blue)}`}>
+                      {day.day}
                     </div>
-                    <p className="text-xs text-on-surface-variant mt-0.5">{day.focus} · ~{day.estimatedHours}h</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9px] font-bold text-on-surface-variant hidden sm:block">{day.tasks.length} tasks</span>
-                    {isExpanded ? <ChevronUp size={16} className="text-on-surface-variant" /> : <ChevronDown size={16} className="text-on-surface-variant" />}
-                  </div>
-                </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={`font-bold text-on-surface text-sm truncate ${completedTasks.has(`day-${day.day}`) ? 'line-through opacity-60' : ''}`}>{day.title}</p>
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${PRIORITY_BADGE[day.priority] || PRIORITY_BADGE.medium}`}>
+                          {day.priority}
+                        </span>
+                      </div>
+                      <p className="text-xs text-on-surface-variant mt-0.5">{day.focus} · ~{day.estimatedHours}h</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[9px] font-bold text-on-surface-variant hidden sm:block">{day.tasks.length} tasks</span>
+                      {isExpanded ? <ChevronUp size={16} className="text-on-surface-variant" /> : <ChevronDown size={16} className="text-on-surface-variant" />}
+                    </div>
+                  </button>
+                </div>
 
                 {/* Expanded content */}
                 <AnimatePresence>
@@ -462,16 +624,28 @@ export default function CampusPlanner() {
                         <div className="space-y-2">
                           {day.tasks.map((task, j) => {
                             const Icon = TASK_ICON[task.type] || BookOpen;
+                            const isTaskCompleted = completedTasks.has(`task-${day.day}-${j}`);
                             return (
-                              <div key={j} className="flex gap-3 p-3 bg-surface-container-high rounded-xl">
-                                <div className={`p-1.5 rounded-lg shrink-0 ${TASK_COLOR[task.type] || TASK_COLOR.theory}`}>
+                              <div 
+                                key={j} 
+                                className={`flex items-center gap-3 p-3 bg-surface-container-high rounded-xl border transition-all ${isTaskCompleted ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-transparent'}`}
+                              >
+                                {/* Task Checkbox */}
+                                <button
+                                  onClick={() => toggleTaskTopic(day.day, j)}
+                                  className={`w-5 h-5 rounded flex items-center justify-center border transition-all shrink-0 cursor-pointer ${isTaskCompleted ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-outline-variant/50 hover:border-primary bg-white/5'}`}
+                                >
+                                  {isTaskCompleted && <CheckCircle2 size={11} className="text-white fill-emerald-500" />}
+                                </button>
+
+                                <div className={`p-1.5 rounded-lg shrink-0 ${isTaskCompleted ? 'text-emerald-400 bg-emerald-500/10' : (TASK_COLOR[task.type] || TASK_COLOR.theory)}`}>
                                   <Icon size={13} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-on-surface">{task.description}</p>
+                                  <p className={`text-xs font-bold text-on-surface ${isTaskCompleted ? 'line-through opacity-60' : ''}`}>{task.description}</p>
                                   <p className="text-[10px] text-on-surface-variant mt-0.5">{task.target}</p>
                                 </div>
-                                <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg shrink-0 ${TASK_COLOR[task.type] || TASK_COLOR.theory}`}>
+                                <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg shrink-0 ${isTaskCompleted ? 'text-emerald-400 bg-emerald-500/10' : (TASK_COLOR[task.type] || TASK_COLOR.theory)}`}>
                                   {task.type}
                                 </span>
                               </div>

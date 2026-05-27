@@ -1,5 +1,5 @@
 // src/services/geminiService.ts
-
+import { apiUrl } from '../lib/apiUrl';
 export const models = {
   flash: "gemini-3-flash-preview",
   pro: "gemini-3-flash-preview", 
@@ -35,7 +35,7 @@ export async function generateContent(params: {
   responseMimeType?: "text/plain" | "application/json";
 }) {
   return withRetry(async () => {
-    const response = await fetch('/api/gemini/generate', {
+    const response = await fetch(apiUrl('/api/gemini/generate'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
@@ -92,7 +92,7 @@ OPERATIONAL GUIDELINES:
 - nextQuestion: A string containing exactly what you want to say out loud to the candidate.`;
 
   return withRetry(async () => {
-    const response = await fetch('/api/gemini/interview', {
+    const response = await fetch(apiUrl('/api/gemini/interview'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -242,7 +242,7 @@ export async function extractTextFromImage(file: File) {
         .reduce((data, byte) => data + String.fromCharCode(byte), '')
     );
     
-    const response = await fetch('/api/gemini/generate', {
+    const response = await fetch(apiUrl('/api/gemini/generate'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

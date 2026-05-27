@@ -127,7 +127,8 @@ export async function ensureUserStats(user: User) {
         userId: user.uid,
         totalSessions: 0,
         averageScore: 0,
-        streak: 0,
+        streak: 1,
+        maxStreak: 1,
         xp: 0,
         questionsSolved: 0,
         lastActive: serverTimestamp()

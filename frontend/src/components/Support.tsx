@@ -4,6 +4,7 @@ import { auth } from '../lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import Footer from './Footer';
+import { apiUrl } from '../lib/apiUrl';
 
 export default function Support() {
   const [ticketSubject, setTicketSubject] = useState('');
@@ -56,7 +57,7 @@ export default function Support() {
     setSubmitted(true);
 
     try {
-      await fetch('/api/support/ticket', {
+      await fetch(apiUrl('/api/support/ticket'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -312,7 +313,7 @@ export default function Support() {
               </div>
               <h3 className="text-xl font-bold text-on-surface">Ticket Dispatched!</h3>
               <p className="text-sm text-on-surface-variant leading-relaxed">
-                Your support request has been dispatched to <span className="font-bold text-primary">prepzify@gmail.com</span>. Our technical team will review it and respond within 12 hours.
+                Your support request has been dispatched to <span className="font-bold text-primary">teamprepzify@gmail.com</span>. Our technical team will review it and respond within 12 hours.
               </p>
             </div>
           ) : (

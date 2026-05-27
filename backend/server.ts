@@ -447,7 +447,7 @@ app.post("/api/support/ticket", async (req: Request, res: Response) => {
 
       const mailOptions = {
         from: `"Prepzify Support" <${emailUser}>`,
-        to: "prepzify@gmail.com",
+        to: "teamprepzify@gmail.com",
         replyTo: senderEmail,
         subject: `[Support Ticket] [${subject.toUpperCase()}] from ${senderEmail}`,
         text: `You have received a new support ticket.\n\nFrom: ${senderEmail}\nSubject: ${subject}\n\nMessage:\n${message}\n\n---\nSent automatically from Prepzify Backend.`,
@@ -466,7 +466,7 @@ app.post("/api/support/ticket", async (req: Request, res: Response) => {
       };
 
       await transporter.sendMail(mailOptions);
-      console.log(`[Support Ticket] Mail successfully sent to prepzify@gmail.com`);
+      console.log(`[Support Ticket] Mail successfully sent to teamprepzify@gmail.com`);
     } else {
       console.log(
         `[Support Ticket] EMAIL_USER or EMAIL_PASS not set. Skipping real SMTP send. (Simulated Success)`

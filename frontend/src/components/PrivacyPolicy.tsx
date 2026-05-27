@@ -199,7 +199,7 @@ export default function PrivacyPolicy() {
             </div>
             <div className="p-4 bg-surface-container rounded-2xl border border-outline-variant/30">
               <h5 className="font-bold text-xs text-on-surface mb-1">Right to Erasure (Account Deletion)</h5>
-              <p className="text-[11px] text-on-surface-variant leading-relaxed">Demand Prepzify purges your identity. Email a formal erasure request to support@prepzify.com.</p>
+              <p className="text-[11px] text-on-surface-variant leading-relaxed">Demand Prepzify purges your identity. Email a formal erasure request to teamprepzify@gmail.com.</p>
             </div>
             <div className="p-4 bg-surface-container rounded-2xl border border-outline-variant/30">
               <h5 className="font-bold text-xs text-on-surface mb-1">Right to Withdraw Consent</h5>
@@ -268,7 +268,7 @@ export default function PrivacyPolicy() {
               <span className="material-symbols-outlined text-primary mb-1">mail</span>
               <h5 className="font-bold text-[10px] text-on-surface-variant uppercase">Electronic Mail</h5>
               <p className="text-xs text-primary font-bold hover:underline mt-1">
-                <a href="mailto:support@prepzify.com">support@prepzify.com</a>
+                <a href="mailto:teamprepzify@gmail.com">teamprepzify@gmail.com</a>
               </p>
             </div>
             <div className="p-4 bg-surface-container rounded-2xl border border-outline-variant/30 text-center">

@@ -385,12 +385,12 @@ export default function Settings() {
               <div className="p-4 bg-error-container/5 border border-error/20 rounded-xl space-y-4">
                 <div className="text-center md:text-left space-y-1">
                   <p className="text-sm font-bold text-error">Secure Email OTP Verification</p>
-                  <p className="text-xs text-on-surface-variant">We have sent a 6-digit confirmation code <span className="font-bold text-primary">from prepzify@gmail.com</span> to your email: <span className="font-bold text-on-surface">{user?.email || 'your email'}</span>.</p>
+                  <p className="text-xs text-on-surface-variant">We have sent a 6-digit confirmation code <span className="font-bold text-primary">from teamprepzify@gmail.com</span> to your email: <span className="font-bold text-on-surface">{user?.email || 'your email'}</span>.</p>
                 </div>
 
                 <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-center text-xs font-bold text-primary flex items-center justify-center gap-2">
                   <Sparkles className="w-4 h-4" />
-                  <span>[Sandbox Alert] Verification Email sent from prepzify@gmail.com. OTP Code: <span className="font-mono text-sm underline select-all">{generatedOtp}</span></span>
+                  <span>[Sandbox Alert] Verification Email sent from teamprepzify@gmail.com. OTP Code: <span className="font-mono text-sm underline select-all">{generatedOtp}</span></span>
                 </div>
 
                 {otpError && (

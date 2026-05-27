@@ -1,6 +1,6 @@
 # 🎓 PrepZify — AI-Powered Campus Placement Preparation Platform
 
-> **Supercharge your campus drive preparation.** PrepZify is an elite placement preparation platform combining cutting-edge Google Gemini AI model logic, real-time proctored simulations, customized roadmap builders, and advanced resume intelligence tools into a cohesive and aesthetic application.
+> **Supercharge your campus drive preparation.** PrepZify is an elite placement preparation platform combining cutting-edge Google Gemini AI model logic, client-side proctored face/gaze simulations, Monaco coding practice arenas, customized timeline roadmap builders, and advanced resume intelligence tools into a cohesive and aesthetic application.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Vite-6.x-B73BFE?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
@@ -17,25 +17,25 @@
 
 ## 🌟 Core Features
 
-### 🎙️ 1. Olivia — AI Mock Interviewer
-* **High-Fidelity Dialogue**: Fully natural, speech-synthesized interactive conversational mock interviews powered by the `@google/genai` API (`gemini-2.0-flash`).
-* **Custom Persona**:Olivia acts as a seasoned technical lead or HR executive, reacting dynamically to the user's responses, offering industry-grade questioning.
-* **Integrated STT & TTS**: Real-time browser-based Speech Recognition (Speech-To-Text) and natural Speech Synthesis (Text-To-Speech) with customizable pacing and human-like pitches.
-* **Comprehensive Performance Reviews**: In-depth analytical reports with scores for clarity, jargon usage, filler word tracking, custom action tips, and pros & cons.
-* **Transcript Exports**: Instantly download complete interaction records as structured `.txt` files for self-review.
+### 🎙️ 1. Olivia — AI Mock Interviewer & Resume Sync
+* **Cohesive Resume-to-Interview Link**: Instantly bridges the **Resume Intelligence** and **Mock Interview** views. Olivia parses candidate details (Name, Tech Stack, target role, and experience) directly from the uploaded/pasted resume.
+* **Recruiter-Specific Persona & Guidelines**: Olivia adapts her system prompts dynamically to match the target company's culture and hiring benchmarks (e.g., Googliness at Google, Leadership Principles at Amazon). She structures behavior and technical loops around the candidate's actual resume projects.
+* **Premium Setup & Sync Badge**: Includes a glassmorphic `📄 Resume Profile Sync Active` banner displaying linked candidate name and tech stack, prompting users to sync their resume context or enter details manually.
+* **High-Fidelity Dialogue**: Speech-synthesized technical and behavioral interviews powered by the `@google/genai` API (`gemini-2.0-flash`).
+* **Integrated STT & TTS**: Real-time browser Speech Recognition (Speech-To-Text) and natural Speech Synthesis (Text-To-Speech) with customizable human-like pitches.
+* **Analytical Performance Reviews**: In-depth reports grading clarity, filler word tracking, custom action tips, and pros & cons, alongside structured text transcript downloads.
 
 ### 🛡️ 2. Real-Time Face & Gaze Proctoring
-* **Edge-Based Face Landmarks**: Direct client-side AI analysis using **TensorFlow.js** and **MediaPipe FaceMesh** running inside the browser context (zero backend video latency).
+* **Edge-Based Face Landmarks**: Direct client-side AI analysis using **TensorFlow.js** and **MediaPipe FaceMesh** running inside the browser context (zero video lag).
 * **Multi-Face Detection**: Flags if another person enters the camera field to ensure test integrity.
 * **Eye-Tracking & Jitter Heuristics**: Dynamic movement analyzer monitors pupil movement and gaze directions, warning users immediately if they look away from the screen.
 * **Orientation Profiles**: Measures head rotational coordinates to detect side-facing postures or screen-switching patterns during the assessment.
 
-### 💻 3. Practice Arena
+### 💻 3. Monaco Practice Arena
 * **Monaco Coding Environment**: A fully integrated Visual Studio Code-like text editor inside the browser supporting multi-tab panels.
 * **Comprehensive Languages**: Practice in **JavaScript**, **Python**, **C++**, and **Java** with custom language syntax highlighting and starter code generators.
 * **AI Solutions Compiler**: Non-JS runtimes are fully simulated using high-precision Gemini code execution engines, verifying syntax and functional output.
 * **Gemini Automated Test Suites**: Competitive programming assessment engine that runs student code against all edge cases and structural constraints, generating clean outputs or debugging notes.
-* **Gamification Core**: Earn XP on successful solutions. Progress through multiple professional ranks (e.g., *Junior Engineer* ➡️ *Senior Architect* ➡️ *Elite Architect*).
 
 ### 📄 4. Resume Intelligence & ATS Grading
 * **PDF Parser Engine**: High-performance extraction of PDF structures using client-side `pdfjs-dist` pipelines.
@@ -44,10 +44,33 @@
 * **One-Click Word Export**: Instantly export a completely tailored, recruiter-ready `.docx` resume directly to your local file system.
 * **Job Matchmaking**: Matches parsed skills against live job recommendations, supplying estimated salary ranges, candidate compatibility fits, and step-by-step applying metrics.
 
-### 🗺️ 5. Personalized Career Roadmaps
-* **Phase-Based Milestones**: High-fidelity timeline roadmap detailing what skills to master and in what sequence, tailored to specific engineering branches and roles.
+### 🗺️ 5. Personalized Career & Campus Timelines
+* **Personalized Branch Roadmaps**: Detailed timeline roadmaps outlining what skills to master and in what sequence, tailored to specific engineering branches and roles.
+* **Campus Placement Planner**: Timeline-aware placement timeline builder mapping out recruitment phases and daily milestones tailored to specific company patterns (e.g. TCS, Infosys, Wipro, Amazon, Google).
 * **Micro-Learning Actions**: Breaks large career goals down into small daily checkpoints.
-* **Topic-Based Navigation**: Easily jump from career roadmaps straight to relevant practice questions in the Practice Arena.
+
+---
+
+## ⚡ Dynamic Streak, Consistency & Performance Progression
+
+PrepZify incentivizes daily preparation and granular performance tracking through gamified progression systems:
+
+### 💡 1. Granular Progress Checkpoints
+* **Study Paths (Learning Hub)**: Adds checkboxes for both parent modules and sub-topics (curated video, article, and document resources). Checking resources strikes them out in real-time (`line-through opacity-60`), applies an elegant emerald glow (`border-emerald-500/25 bg-emerald-500/5`), and recalculates overall progression metrics.
+* **Campus Placement Planner**: Allows checking off Day (Module) milestones and individual daily tasks (topics/checkpoints). Day 0 checklist is also fully checkable. Visualizes progress dynamically through a dedicated glassmorphic **Plan Progress** card.
+* **Stat Reward Points**:
+  - Completing a Campus Planner Day rewards the student with **+100 XP** and increments completed sessions.
+  - Completing an individual Campus Planner Daily Task rewards the student with **+30 XP**.
+  - Completing a Study Path Module rewards the student with **+150 XP** and 1 solved question count.
+  - Users progress through professional engineering ranks (e.g., *Junior Engineer* ➡️ *Senior Architect* ➡️ *Elite Architect*).
+
+### 🔥 2. Dynamic Active Streaks & Max Streak Tracking
+* **Calendar-Aligned Streak Engine**: Tracks user consistency using a robust date-comparison algorithm. Clears calendar hours/minutes to match exact dates, keeping stats timezone-safe:
+  - **Consecutive activity (Yesterday)**: Increments the active `streak` by 1 and updates the high-water `maxStreak` mark.
+  - **Broken activity (Before Yesterday)**: Resets active `streak` back to 1.
+  - **Active today**: Retains current active streak (avoids redundant writes).
+* **Double Dashboard Display**: Displays the user's active streak count (`X Days`) alongside their all-time high `Max Streak: Y days` directly below the count inside the overview panel.
+* **Unified Persistence**: Streaks and max streaks are synced dynamically to Firestore (`streak`, `maxStreak`) or stored in guest-scoped local storage (`bt_streak`, `bt_max_streak`, `bt_last_active`) for guests.
 
 ---
 
@@ -57,17 +80,17 @@
 Prepzify/
 ├── backend/                  ← Express Server Workspace (Node.js + TS)
 │   ├── dist/                 ← Production build files
-│   ├── server.ts             ← Main API Router & Controller logic
+│   ├── server.ts             ← Main API Router, Nodemailer & SMTP controllers
 │   ├── tsconfig.json         ← Backend TypeScript compiler settings
 │   ├── package.json          ← Server package settings & build pipelines
 │   └── .env.example          ← Sandbox environment template
 │
 ├── frontend/                 ← React UI Workspace (Vite + TS + TailwindCSS)
 │   ├── src/
-│   │   ├── components/       ← UI layouts, Sidebar, Dashboard, overlays, reports
+│   │   ├── components/       ← UI layouts, Auth, Leaderboards, Settings, Timelines
 │   │   ├── context/          ← Global Theme & Subscription contexts
 │   │   ├── data/             ← Static questions & curriculum database
-│   │   ├── lib/              ← Firebase connectors & Docx exporters
+│   │   ├── lib/              ← Firebase connectors, storage utilities, scroll handlers
 │   │   ├── services/         ← API connectors (Gemini, DB, Proctor, Job, Payments)
 │   │   └── types.ts          ← Shared TS interface models
 │   ├── index.html            ← Base HTML entrypoint
@@ -87,14 +110,14 @@ Prepzify/
 | Component / Layer | Technology | Function / Description |
 | :--- | :--- | :--- |
 | **Frontend UI** | React 19, TypeScript, Vite | Ultra-fast rendering with Hot Module Replacement (HMR) |
-| **Styling System** | TailwindCSS v4, CSS Variables | Glassmorphic visual states, adaptive grid modules |
+| **Styling System** | CSS, CSS Variables | Glassmorphic visual states, adaptive grid modules |
 | **Animation Core** | Motion (Framer Motion v12) | Elegant 3D page transitions, slide components, micro-interactions |
-| **Backend API** | Node.js, Express 4, tsx | API Routing, nodemailing, Razorpay integration, CORS policies |
+| **Backend API** | Node.js, Express 4, tsx | API Routing, SMTP mailing, Razorpay integration, CORS policies |
 | **Cognitive AI** | `@google/genai` (`gemini-2.0-flash`) | Core mock dialogue, code reviews, automated grading |
 | **Visual proctoring** | TensorFlow.js, MediaPipe FaceMesh | Browser-based landmark analysis, pupillary monitoring |
-| **Database & Auth** | Firebase (Auth + Cloud Firestore) | Session storage, user profiles, stats, leaderboards |
+| **Database & Auth** | Firebase (Auth + Cloud Firestore) | Session storage, user profiles, stats, leaderboards, progress sync |
 | **Interactive Editor**| Monaco Editor (`@monaco-editor/react`) | Rich editor, bracket matches, custom starter templates |
-| **Document Handlers** | jsPDF, pdf.js, html2canvas | Client-side resume parsing and audit report conversions |
+| **Document Handlers** | jsPDF, pdf.js, html2canvas, docx | Client-side resume parsing and audit report conversions |
 | **Visual Charts** | Recharts | Multi-axis Radar and polar angle charts mapping skill evolution |
 | **Payment Gateway** | Razorpay SDK | Encrypted payment collection with fallbacks |
 
@@ -125,7 +148,8 @@ RAZORPAY_KEY_ID=rzp_test_your_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 
 # ── SMTP Email Config (Nodemailer Support Tickets) ───────────────────────────
-EMAIL_USER=your_support_email@gmail.com
+# Company email destination configured globally: teamprepzify@gmail.com
+EMAIL_USER=your_smtp_sender_email@gmail.com
 EMAIL_PASS=your_email_app_password
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -185,19 +209,6 @@ npm run dev
 
 ---
 
-## 💳 Pricing Tiers & Subscription Matrix
-
-Integrated directly into user contexts (`SubscriptionContext.tsx`), users can choose from the following tiers using Razorpay checkout flows (or simulating transactions via the **Developer Sandbox**):
-
-| Package Tier | Pricing Value | Duration | Primary Features Included |
-| :--- | :--- | :--- | :--- |
-| **Free** | ₹0 | Unlimited | 1 AI Video Interview/week, 2 ATS Resume Audits/month, 15 AI Chats, Basic Curricula |
-| **Pro** | ₹199 | 30 Days | 5 AI Mock Interviews/week, Unlimited ATS Reviews, Unlimited Coding, 300 AI Chats |
-| **Pro+** | ₹499 | 90 Days | 20 Company-Specific Interviews, AI Code Reviews, Priority Support, Smart Analytics |
-| **Elite** | ₹1499 | 365 Days | 100 mock interviews, Placement Readiness Score, Long-Term Tracking, Priority Features |
-
----
-
 ## 📡 REST API Reference
 
 The backend Express application acts as an optimized, secure endpoint server.
@@ -216,9 +227,9 @@ The backend Express application acts as an optimized, secure endpoint server.
     }
     ```
 
-### 🎟️ Nodemailer Support tickets
+### 🎟️ Nodemailer Support Tickets
 * **`POST /api/support/ticket`**
-  * **Description**: Dispatches detailed user feedback/support requests directly to administration email accounts.
+  * **Description**: Dispatches support requests directly to the company administration mailbox: `teamprepzify@gmail.com`.
   * **Payload**:
     ```json
     {
@@ -239,12 +250,6 @@ The backend Express application acts as an optimized, secure endpoint server.
   * **Payload**: Requires `razorpay_order_id`, `razorpay_payment_id`, and cryptographic signature (`razorpay_signature`).
   * **Verification**: Computes a SHA256 HMAC utilizing the private secret and compares with client hashes to prevent payment spoofing.
 
-### 🤖 Gemini AI Pipelines
-* **`POST /api/gemini/generate`**
-  * **Description**: Base completion wrapper. Accommodates system instructions, image binary payloads (base64), and model presets.
-* **`POST /api/gemini/interview`**
-  * **Description**: Conversation route that handles message arrays, alternates user/model chat histories, and prompts the technical mock dialogue flow.
-
 ---
 
 ## 🏗️ Production Deployment Build Guide
@@ -259,15 +264,15 @@ The backend Express application acts as an optimized, secure endpoint server.
    cd frontend
    npm run build
    ```
-3. Deploy the compiled files inside `frontend/dist/` directly to static CDN engines (Vercel, Netlify, Firebase Hosting).
+3. Deploy compiled files inside `frontend/dist/` directly to static hosting services (Render, Vercel, Netlify, Firebase Hosting).
 
 ### Backend Build
-1. Bundle the server files using **esbuild**:
+1. Bundle server files using **esbuild**:
    ```bash
    cd backend
    npm run build
    ```
-2. The bundled file outputs to `backend/dist/server.js`.
+2. Bundled file outputs to `backend/dist/server.js`.
 3. Set your production environmental parameters on your node hosting service (Render, Railway, EC2) and run:
    ```bash
    npm run start
@@ -279,4 +284,4 @@ The backend Express application acts as an optimized, secure endpoint server.
 
 This project is licensed under the **MIT License**.
 
-Developed with 💜 by **Gyanshankar Singh** and the PrepZify Open Source Community. For inquiries or business options, submit a support ticket directly through the PrepZify support dashboard.
+Developed with 💜 by **Gyanshankar Singh** and the PrepZify Open Source Community. For support, account queries, or corporate options, dispatch a ticket via the dashboard or reach out to **teamprepzify@gmail.com**.

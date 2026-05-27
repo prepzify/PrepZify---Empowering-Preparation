@@ -87,7 +87,7 @@ export default function AuthPage() {
     setSignupOtpCode(generatedCode);
     setEnteredSignupOtp('');
     setSignupOtpError('');
-    alert("A new verification code has been dispatched from prepzify@gmail.com.");
+    alert("A new verification code has been dispatched from teamprepzify@gmail.com.");
   };
 
   const handleGoogleSignIn = async (useRedirect = false) => {
@@ -170,7 +170,7 @@ export default function AuthPage() {
                 <div className="space-y-3 text-center md:text-left">
                   <h3 className="text-2xl font-black tracking-tighter text-on-surface">Verify Your Account</h3>
                   <p className="text-on-surface-variant text-sm leading-relaxed">
-                    A 6-digit verification code has been dispatched <span className="font-bold text-primary">from prepzify@gmail.com</span> to your email: <span className="font-bold text-on-surface">{email}</span>.
+                    A 6-digit verification code has been dispatched <span className="font-bold text-primary">from teamprepzify@gmail.com</span> to your email: <span className="font-bold text-on-surface">{email}</span>.
                   </p>
                 </div>
 

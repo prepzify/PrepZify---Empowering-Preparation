@@ -88,6 +88,29 @@ export const dbService = {
     }
   },
 
+  // Campus Plans
+  async saveCampusPlan(userId: string, planData: any) {
+    const path = `users/${userId}/campusPlans/current`;
+    try {
+      await setDoc(doc(db, path), {
+        ...planData,
+        timestamp: serverTimestamp()
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, path);
+    }
+  },
+
+  async getCampusPlan(userId: string) {
+    const path = `users/${userId}/campusPlans/current`;
+    try {
+      const snap = await tryGetDoc(doc(db, path));
+      return snap.exists() ? snap.data() as any : null;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, path);
+    }
+  },
+
   // User Stats (Progress, XP, Questions Solved)
   async updateUserStats(userId: string, stats: any) {
     const path = `users/${userId}`;
@@ -139,11 +162,62 @@ export const dbService = {
           questionsSolved: solveCount,
           totalSessions: 1,
           streak: 1,
+          maxStreak: 1,
           lastActive: serverTimestamp()
         });
       }
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, path);
+    }
+  },
+
+  async checkAndUpdateStreak(userId: string) {
+    const path = `users/${userId}`;
+    const userRef = doc(db, path);
+    try {
+      const snap = await tryGetDoc(userRef);
+      if (snap.exists()) {
+        const data: any = snap.data();
+        const now = new Date();
+        const lastActive = data.lastActive ? data.lastActive.toDate() : null;
+        
+        let currentStreak = data.streak || 1;
+        let maxStreak = data.maxStreak || 1;
+
+        if (lastActive) {
+          const lastActiveDate = new Date(lastActive);
+          
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          
+          const compareDate = new Date(lastActiveDate.getFullYear(), lastActiveDate.getMonth(), lastActiveDate.getDate());
+
+          if (compareDate.getTime() === yesterday.getTime()) {
+            currentStreak += 1;
+            maxStreak = Math.max(maxStreak, currentStreak);
+            await updateDoc(userRef, {
+              streak: currentStreak,
+              maxStreak: maxStreak,
+              lastActive: serverTimestamp()
+            });
+          } else if (compareDate.getTime() < yesterday.getTime()) {
+            currentStreak = 1;
+            await updateDoc(userRef, {
+              streak: currentStreak,
+              lastActive: serverTimestamp()
+            });
+          }
+        } else {
+          await updateDoc(userRef, {
+            streak: 1,
+            maxStreak: 1,
+            lastActive: serverTimestamp()
+          });
+        }
+      }
+    } catch (error) {
+      console.warn("Failed to check and update streak:", error);
     }
   },
 
