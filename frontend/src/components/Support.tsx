@@ -194,11 +194,11 @@ export default function Support() {
               </div>
             </div>
 
+            <a 
+            href="https://discord.gg/ePRXcYEb"
+            target='_blank'
+            rel="noopener noreferrer"            >
             <div 
-              onClick={() => {
-                setDiscordToast(true);
-                setTimeout(() => setDiscordToast(false), 5000);
-              }}
               className="p-6 bg-surface-container border border-outline-variant rounded-xl hover:border-[#5865F2]/40 hover:shadow-xl hover:shadow-[#5865F2]/5 transition-all cursor-pointer group flex flex-col justify-between min-h-[160px] relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-24 h-24 bg-[#5865F2]/5 rounded-full blur-xl -translate-y-6 translate-x-6" />
@@ -207,12 +207,13 @@ export default function Support() {
                   <svg className="w-8 h-8 text-[#5865F2] mb-3 group-hover:scale-110 transition-transform" viewBox="0 0 127.14 96.36" fill="currentColor">
                     <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,52.8,6.83,77.19,77.19,0,0,0,49.5,0,105.15,105.15,0,0,0,19.06,8.07C-3.41,41.51-1.86,74.36,10.26,96c14.92,10.94,29.39,17.6,43.65,22a81.93,81.93,0,0,0,9.25-15.07,67.6,67.6,0,0,1-14.56-7c1.23-.9,2.42-1.85,3.57-2.84,28.59,13.18,59.6,13.18,87.82,0,1.15,1,2.34,1.94,3.57,2.84a67.75,67.75,0,0,1-14.56,7,81.93,81.93,0,0,0,9.25,15.07c14.26-4.37,28.73-11,43.65-22C129.23,74.36,130.64,41.51,107.7,8.07ZM42.45,65.69C33.82,65.69,26.7,57.85,26.7,48.2s7.12-17.49,15.75-17.49,15.82,7.91,15.75,17.49C58.2,57.85,51.15,65.69,42.45,65.69Zm42.24,0C76,65.69,68.91,57.85,68.91,48.2s7.12-17.49,15.75-17.49,15.82,7.91,15.75,17.49C100.41,57.85,93.36,65.69,84.69,65.69Z" />
                   </svg>
-                  <span className="text-[8px] bg-[#5865F2]/10 text-[#5865F2] border border-[#5865F2]/20 px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider">Soon</span>
+                  <span className="text-[8px] bg-[#5865F2]/10 text-[#5865F2] border border-[#5865F2]/20 px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider">Active</span>
                 </div>
                 <h4 className="font-bold text-sm text-on-surface">Discord Server</h4>
                 <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">Join the elite architect Discord space.</p>
               </div>
             </div>
+            </a>
 
             <a 
               href="https://t.me/prepzify" 
@@ -226,12 +227,10 @@ export default function Support() {
                   <svg className="w-8 h-8 text-[#24A1DE] mb-3 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15.82-1.07 4.28-1.55 6.86-.2.18-.38.22-.52.22-.3 0-.52-.18-.76-.34-.37-.25-.58-.4-.94-.64-.42-.27-.83-.42-1.25-.42-.32 0-.64.06-.94.19-.24.1-.7.29-1.32.55-.47.2-.82.3-.98.3-.26 0-.48-.15-.55-.38-.07-.22-.05-.48.06-.72.07-.15.48-1.63.92-3.18.3-.98.54-1.8.64-2.14.07-.25.18-.46.33-.61.15-.15.35-.23.6-.23h.02c.3 0 .58.12.8.3.2.16.32.4.34.66.02.26-.06.76-.17,1.25-.13.56-.25.99-.25.99s-.04.18.06.27c.1.09.28.03.28.03s.98-.63 1.58-.99c.56-.34.9-.53.94-.53.12 0 .2.08.18.2z"/>
                   </svg>
-                  <span className="text-[8px] bg-[#24A1DE]/10 text-[#24A1DE] border border-[#24A1DE]/20 px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-1">
-                    <span className="w-1 h-1 bg-[#24A1DE] rounded-full animate-pulse" /> Active
-                  </span>
+                  <span className="text-[8px] bg-[#5865F2]/10 text-[#5865F2] border border-[#5865F2]/20 px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider">Active</span>
                 </div>
                 <h4 className="font-bold text-sm text-on-surface">Telegram Channel</h4>
-                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">Join our active Telegram channel at t.me/prepzify.</p>
+                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">Join our active Telegram channel.</p>
               </div>
             </a>
           </div>

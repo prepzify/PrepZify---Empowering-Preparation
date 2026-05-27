@@ -95,9 +95,9 @@ export default function Footer() {
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Community Support</h4>
             <ul className="space-y-2.5 text-sm text-on-surface-variant font-medium">
               <li>
-                <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-on-surface flex items-center gap-1.5 group cursor-default">
+                <a href="https://discord.gg/ePRXcYEb" target="_blank" rel="noopener noreferrer" className="hover:text-on-surface flex items-center gap-1.5 group cursor-default">
                   Discord Space
-                  <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider scale-90 shrink-0">Soon</span>
+                  {/* <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider scale-90 shrink-0">Soon</span> */}
                 </a>
               </li>
               <li>
