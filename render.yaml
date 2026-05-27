@@ -3,7 +3,7 @@ services:
     name: prepzify-backend
     runtime: node
     rootDir: backend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: node dist/server.js
     healthCheckPath: /api/health
     envVars:
