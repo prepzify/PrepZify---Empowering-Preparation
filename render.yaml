@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: prepzify-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: node dist/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: GEMINI_API_KEY
+        sync: false          # Set manually in Render dashboard (secret)
+      - key: FRONTEND_URL
+        sync: false          # Set to your Vercel URL after deploying frontend
+      - key: RAZORPAY_KEY_ID
+        sync: false          # Set manually in Render dashboard
+      - key: RAZORPAY_KEY_SECRET
+        sync: false          # Set manually in Render dashboard
