@@ -124,6 +124,17 @@ if (NODE_ENV !== "production") {
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
+/** API Root welcome route */
+app.get("/", (_req: Request, res: Response) => {
+  res.json({
+    message: "Welcome to PrepZify API Engine",
+    status: "online",
+    healthCheck: "/api/health",
+    paymentPlans: "/api/payments/plans",
+    supportTicket: "/api/support/ticket"
+  });
+});
+
 /** Health check */
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({
@@ -412,6 +423,22 @@ app.post("/api/gemini/interview", async (req: Request, res: Response) => {
     console.error("[/api/gemini/interview]", message);
     res.status(500).json({ error: message });
   }
+});
+
+/**
+ * Support Ticket Info endpoint
+ */
+app.get("/api/support/ticket", (_req: Request, res: Response) => {
+  res.json({
+    message: "Support ticket endpoint is active. Please use the POST method to submit a support ticket.",
+    requiredFields: ["subject", "message"],
+    optionalFields: ["email"],
+    examplePayload: {
+      subject: "technical",
+      message: "Detailed description of the issue...",
+      email: "user@example.com"
+    }
+  });
 });
 
 /**
