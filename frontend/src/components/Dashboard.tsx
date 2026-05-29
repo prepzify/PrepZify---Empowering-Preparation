@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Footer from './Footer';
+import FAQSection from './FAQSection';
 import QuickPrepAssessment from './QuickPrepAssessment';
 import { scopedStorage } from '../lib/storageUtils';
 import { 
@@ -653,6 +654,9 @@ export default function Dashboard() {
           </div>
         )}
       </AnimatePresence>
+      <div className="pt-12 border-t border-outline-variant/30">
+        <FAQSection />
+      </div>
       <Footer />
     </motion.div>
   );

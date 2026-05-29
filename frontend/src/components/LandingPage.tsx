@@ -18,6 +18,7 @@ import { auth } from '../lib/firebase';
 import { PRICING_PLANS, PricingPlan, startRazorpayPayment } from '../services/paymentService';
 import Logo from './Logo';
 import Footer from './Footer';
+import FAQSection from './FAQSection';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -56,11 +57,7 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 h-20 z-50 bg-background/80 backdrop-blur-md border-b border-outline-variant px-6 md:px-12 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Logo className="w-10 h-10" />
-          <h1 className="font-display text-2xl font-bold tracking-tighter">
-            <span className="text-[#0056b3]">Prep</span>
-            <span className="text-[#ff9800]">Zify</span>
-          </h1>
+          <Logo className="w-50" />
         </div>
         
         <div className="hidden md:flex items-center gap-8 text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">
@@ -271,6 +268,13 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 px-6 md:px-12 bg-surface border-t border-b border-outline-variant/30">
+        <div className="max-w-7xl mx-auto">
+          <FAQSection />
         </div>
       </section>
 

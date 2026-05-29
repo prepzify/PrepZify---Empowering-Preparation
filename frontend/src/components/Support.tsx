@@ -4,6 +4,7 @@ import { auth } from '../lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import Footer from './Footer';
+import FAQSection from './FAQSection';
 import { apiUrl } from '../lib/apiUrl';
 
 export default function Support() {
@@ -358,21 +359,8 @@ export default function Support() {
         </div>
       </div>
 
-      <div className="pt-10 lg:pt-20">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-6 text-center">Frequently Asked Questions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {[
-            { q: "Is the AI interview realistic?", a: "Yes, we use advanced RAG over real FAANG interview transcripts to provide realistic behavior and edge-case questions." },
-            { q: "Can I use my own code editor?", a: "We provide an integrated IDE, but you can paste code from external editors easily. We support auto-sync for most common formats." },
-            { q: "How is the rank calculated?", a: "Rank is a weighted combination of problems solved, interview scores, and consistency (streak)." },
-            { q: "Is there a student discount?", a: "Students with a valid .edu email get 50% off the Pro Tier yearly subscription." }
-          ].map((faq, i) => (
-            <div key={i} className="p-6 border border-outline-variant rounded-xl hover:bg-surface-container-high transition-colors">
-              <h4 className="font-bold text-on-surface text-sm">{faq.q}</h4>
-              <p className="text-sm text-on-surface-variant mt-2 leading-relaxed">{faq.a}</p>
-            </div>
-          ))}
-        </div>
+      <div className="pt-10 lg:pt-20 border-t border-outline-variant/30">
+        <FAQSection />
       </div>
 
       <AnimatePresence>

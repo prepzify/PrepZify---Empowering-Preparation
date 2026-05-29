@@ -22,6 +22,7 @@ import QuickPrepAssessment from './components/QuickPrepAssessment';
 import LiveExpertBooking from './components/LiveExpertBooking';
 import InterviewHistory from './components/InterviewHistory';
 import LandingPage from './components/LandingPage';
+import FAQPage from './components/FAQPage';
 import AuthPage from './components/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import TermsAndConditions from './components/TermsAndConditions';
@@ -89,6 +90,7 @@ export default function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/landing" element={<LandingPage />} />
+            <Route path="/faq" element={<FAQPage />} />
             <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
             <Route path="/terms" element={<div className="p-4 md:p-8 lg:p-12 min-h-screen bg-background"><TermsAndConditions /></div>} />
             <Route path="/privacy" element={<div className="p-4 md:p-8 lg:p-12 min-h-screen bg-background"><PrivacyPolicy /></div>} />
