@@ -23,6 +23,11 @@ const ALLOWED_ORIGINS: string[] = [
   "http://localhost:5174",
   "http://localhost:4173", // vite preview
   "http://localhost:4174", // vite preview alternate
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:4173",
+  "http://127.0.0.1:4174",
+  "https://prepzify.vercel.app", // Production Vercel App
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
 ];
 
@@ -102,7 +107,12 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (server-to-server, Postman, etc.)
       if (!origin) return callback(null, true);
-      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      // In development, allow all origins
+      if (NODE_ENV !== "production") return callback(null, true);
+      // Allow main Vercel origin, raw match, or Vercel preview domains
+      if (ALLOWED_ORIGINS.includes(origin) || origin.endsWith(".vercel.app")) {
+        return callback(null, true);
+      }
       callback(new Error(`CORS: origin '${origin}' is not allowed.`));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
