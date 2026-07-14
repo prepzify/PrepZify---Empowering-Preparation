@@ -1,44 +1,55 @@
-# Interview Questions & Answers
+# PrepZify - Technical Interview Questions & Answers
 
-## Frontend (React & JavaScript)
+This document contains interview questions specifically tailored to the **PrepZify** project, its architecture, and its technology stack.
 
-### 1. What is the Virtual DOM in React?
-**Answer:** The Virtual DOM (VDOM) is a programming concept where an ideal, or "virtual", representation of a UI is kept in memory and synced with the "real" DOM by a library such as ReactDOM. This process is called reconciliation. It allows React to compute minimal DOM operations when updating the UI, making it highly performant.
+## Architecture & System Design
 
-### 2. Explain Closures in JavaScript.
-**Answer:** A closure is a feature in JavaScript where an inner function has access to the outer (enclosing) function's variables—a scope chain. The closure has three scope chains: it has access to its own scope, it has access to the outer function's variables, and it has access to the global variables.
+### 1. Can you explain the overall architecture of PrepZify?
+**Answer:** PrepZify is built as a monorepo with a decoupled frontend and backend. 
+- **Frontend:** Built with React 19, TypeScript, and Vite, it handles the UI, client-side ML (TensorFlow.js/MediaPipe), and state management. 
+- **Backend:** A Node.js/Express server that acts as a secure API gateway for Razorpay payments, Nodemailer support tickets, and specific routing.
+- **AI Core:** Integrated deeply with the `@google/genai` API (Gemini 2.0 Flash) for mock interviews and code evaluation.
+- **Database:** Firebase Authentication and Cloud Firestore manage session data, user profiles, and gamification streaks.
 
-### 3. What are React Hooks?
-**Answer:** Hooks are functions that let you "hook into" React state and lifecycle features from function components. Examples include `useState` for managing local state and `useEffect` for performing side effects (like data fetching or manually changing the DOM).
+### 2. Why did you choose Vite over Create React App or Next.js?
+**Answer:** Vite was chosen for its blazing-fast Hot Module Replacement (HMR) and optimized build times, leveraging native ES modules. Since a significant portion of PrepZify (like MediaPipe proctoring and PDF parsing) is highly client-heavy and doesn't explicitly require Server-Side Rendering (SSR) for SEO, a highly optimized Client-Side Rendered (CSR) app with Vite provided the best developer experience and performance.
 
-### 4. What is the Event Loop in JavaScript?
-**Answer:** The event loop is a mechanism that makes JavaScript's single-threaded, non-blocking asynchronous concurrent model possible. It continuously checks the call stack and if it's empty, it checks the callback queue, pushing the first callback into the stack to be executed.
+## AI & Machine Learning Integrations
 
-## Backend (Node.js & Express)
+### 3. How does Olivia, the AI Mock Interviewer, function under the hood?
+**Answer:** Olivia bridges the user's parsed resume data with the Gemini 2.0 Flash model. The system dynamically constructs a prompt containing the candidate's skills, target role, and experience. It uses the real-time Web Speech API for Speech-to-Text (STT) to capture the user's answer, sends it to Gemini for evaluation and follow-up generation, and uses Text-to-Speech (TTS) to vocalize the AI's response in a human-like pitch.
 
-### 5. How does Node.js handle concurrency despite being single-threaded?
-**Answer:** Node.js uses an event-driven, non-blocking I/O model. While the main thread runs the event loop, heavy I/O operations are offloaded to worker threads (via libuv). Once an operation completes, its callback is pushed to the event queue to be executed by the main thread.
+### 4. How does the real-time proctoring system work, and why run it client-side?
+**Answer:** The proctoring system uses **TensorFlow.js** and **MediaPipe FaceMesh** to track facial landmarks and pupil movement directly in the browser. 
+Running this client-side (Edge AI) is crucial because:
+1. **Zero Latency:** It prevents the lag associated with sending video feeds to a server.
+2. **Privacy:** The user's video feed never leaves their device, ensuring high security and privacy.
+3. **Cost Efficiency:** It offloads the heavy computational cost of computer vision from our servers to the user's device.
 
-### 6. What is middleware in Express.js?
-**Answer:** Middleware functions have access to the request object (`req`), response object (`res`), and the `next` middleware function. They can execute code, modify request/response objects, end the cycle, or call the next middleware.
+## Frontend & Editor Integration
 
-### 7. What is REST and what is a RESTful API?
-**Answer:** REST (Representational State Transfer) is an architectural style for web services. A RESTful API uses HTTP methods (GET, POST, PUT, DELETE) to access and manipulate data. It is stateless, meaning each request contains all information needed to process it.
+### 5. How did you integrate the coding practice arena into the application?
+**Answer:** The practice arena utilizes `@monaco-editor/react`, which brings a rich VS Code-like editing experience to the browser. For code execution, while JS can be evaluated safely in the browser (or via sandboxed Web Workers), non-JS languages (Python, C++, Java) are simulated using the Gemini AI engine, which acts as a virtual compiler to verify syntax, run edge cases, and provide debugging notes.
 
-## Database (SQL & NoSQL)
+### 6. How is the Resume Parsing and ATS grading implemented?
+**Answer:** The platform uses `pdfjs-dist` to parse uploaded PDF resumes purely on the client side. The extracted text structure is then analyzed by our AI models to calculate an ATS compatibility score, find semantic skill gaps based on target roles, and even export a localized recruiter-ready `.docx` file using docx generators.
 
-### 8. What is the difference between SQL and NoSQL?
-**Answer:** SQL databases are relational and use structured query language, defining schemas before inserting data (e.g., PostgreSQL, MySQL). NoSQL databases are non-relational and have dynamic schemas for unstructured data (e.g., MongoDB, Redis). SQL is typically vertically scalable, while NoSQL is horizontally scalable.
+## Backend, Database & Gamification
 
-## General & Behavioral
+### 7. Why use Firebase Firestore instead of a relational database like PostgreSQL?
+**Answer:** Firestore was chosen for its real-time synchronization capabilities and seamless integration with Firebase Auth. Since PrepZify has features like dynamic streaks, progress tracking, and leaderboards that update frequently from the client side, a NoSQL document database like Firestore provides the flexibility and real-time listeners required without having to manage complex WebSockets manually.
 
-### 9. What happens when you type a URL into a browser?
-**Answer:** 
-1. DNS lookup finds the server's IP address.
-2. The browser establishes a TCP connection with the server.
-3. The browser sends an HTTP request.
-4. The server processes the request and sends an HTTP response.
-5. The browser renders the HTML, CSS, and executes JavaScript.
+### 8. Explain the algorithm behind the dynamic streak tracking system.
+**Answer:** The streak engine uses a timezone-safe date-comparison algorithm. It zeroes out the hours and minutes to compare exact calendar dates. 
+- If the last active date was **yesterday**, the streak increments by 1.
+- If it was **before yesterday**, the streak resets to 1.
+- If the user was already active **today**, it simply retains the current streak, preventing redundant database writes.
 
-### 10. Why should we hire you?
-**Answer:** *(Personalize this answer by highlighting specific technical skills relevant to the role, your problem-solving abilities, how you align with the company's tech stack, and your track record of successfully delivering projects.)*
+## Security & Payments
+
+### 9. How do you ensure payment security with Razorpay?
+**Answer:** The payment flow follows a secure 3-step process:
+1. The client requests the backend to create an order via `/api/payments/create-order`.
+2. The Razorpay SDK handles the checkout on the frontend.
+3. Once paid, the client sends the `razorpay_order_id`, `razorpay_payment_id`, and `razorpay_signature` to the backend's `/api/payments/verify` endpoint. 
+The backend securely computes a SHA256 HMAC using the private secret key and verifies the signature to prevent payment spoofing.
