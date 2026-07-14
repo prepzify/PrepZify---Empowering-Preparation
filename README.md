@@ -284,4 +284,16 @@ The backend Express application acts as an optimized, secure endpoint server.
 
 This project is licensed under the **MIT License**.
 
-Developed with 💜 by **Gyanshankar Singh** and the PrepZify Open Source Community. For support, account queries, or corporate options, dispatch a ticket via the dashboard or reach out to **teamprepzify@gmail.com**.
+Developed with 💜 by **Team PrepZify**. For support, account queries, or corporate options, dispatch a ticket via the dashboard or reach out to **teamprepzify@gmail.com**.
+
+### Team PrepZify
+1. **[Abhinav Raj]** - [Team Leader + Testing and Demo Engineer]
+2. **[Aditya Kumar]** - [AI Engineer - Resume Analysis]
+3. **[Anurag Gupta]** - [AI Engineer - Resume Analysis + Testing and Demo Engineer]
+4. **[Himanshu Kumar]** - [AI Engineer - Test Analysis]
+5. **[Aryan Singh]** - [AI Engineer - Test Analysis + Dashboard Engineer]
+6. **[Jakaria Enus Hussain]** - [Documentation]
+7. **[Md Akib Ansari]** - [Frontend Engineer]
+8. **[Gaurav Kumar Jha]** - [Data Engineer]
+9. **[Gyanshankar pd Singh]** - [DevOps Engineer]
+10. **[Haris Jamil]** - [Backend Engineer]
